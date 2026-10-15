@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: car-rest-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/car_rest_db
+    username: car_rest
+    password: car_rest
+
+  jpa:
+    open-in-view: false
+
+  flyway:
+    enabled: true
