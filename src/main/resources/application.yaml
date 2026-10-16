@@ -1,3 +1,4 @@
+
 spring:
   application:
     name: car-rest-service
@@ -9,6 +10,14 @@ spring:
 
   jpa:
     open-in-view: false
+    hibernate:
+      ddl-auto: validate
 
   flyway:
     enabled: true
+    locations:
+      - classpath:db/migration
+
+logging:
+  level:
+    root: INFO

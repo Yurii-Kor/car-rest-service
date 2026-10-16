@@ -1,0 +1,22 @@
+
+spring:
+  flyway:
+    locations:
+      - classpath:db/migration/schema
+
+  docker:
+    compose:
+      enabled: false
+
+logging:
+  level:
+    root: WARN
+    ua.foxminded.carrestservice: INFO
+
+  file:
+    name: target/logs/car-rest-service-tests.log
+
+  logback:
+    rollingpolicy:
+      max-file-size: 5MB
+      max-history: 3
