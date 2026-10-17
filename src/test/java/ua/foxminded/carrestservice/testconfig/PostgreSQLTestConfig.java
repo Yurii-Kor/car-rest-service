@@ -1,4 +1,3 @@
-
 package ua.foxminded.carrestservice.testconfig;
 
 import org.springframework.boot.test.context.TestConfiguration;
