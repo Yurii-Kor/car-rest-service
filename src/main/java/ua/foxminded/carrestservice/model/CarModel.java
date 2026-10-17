@@ -1,4 +1,3 @@
-
 package ua.foxminded.carrestservice.model;
 
 import jakarta.persistence.*;
@@ -20,6 +19,7 @@ public class CarModel {
     private String name;
 
     @NonNull
+    @Setter(AccessLevel.NONE)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Manufacturer manufacturer;
 }

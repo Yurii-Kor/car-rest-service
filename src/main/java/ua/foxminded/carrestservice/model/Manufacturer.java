@@ -1,4 +1,3 @@
-
 package ua.foxminded.carrestservice.model;
 
 import jakarta.persistence.*;
