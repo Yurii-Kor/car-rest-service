@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.service.car.exception.CarManufacturerChangeNotAllowedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -37,6 +38,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.CONFLICT,
                 "Operation violates a database constraint");
+    }
+    
+    @ExceptionHandler(CarManufacturerChangeNotAllowedException.class)
+    public ProblemDetail handleCarManufacturerChangeNotAllowed(
+            CarManufacturerChangeNotAllowedException ex) {
+
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @Override
