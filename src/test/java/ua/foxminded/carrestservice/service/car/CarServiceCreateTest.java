@@ -1,3 +1,4 @@
+
 package ua.foxminded.carrestservice.service.car;
 
 import static org.assertj.core.api.Assertions.*;
@@ -19,10 +20,14 @@ import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.service.car.dto.CarRequest;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
+import ua.foxminded.carrestservice.testutil.CarTestReader;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgreSQLTestConfig.class)
+@Import({
+    PostgreSQLTestConfig.class,
+    CarTestReader.class
+})
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @Sql(
         scripts = "/sql/car/car-service-base.sql",
@@ -39,6 +44,9 @@ class CarServiceCreateTest {
 
     @Autowired
     private CarRepository carRepository;
+    
+    @Autowired
+    private CarTestReader carTestReader;
 
     @Test
     @DisplayName("create: valid request -> persists car and returns generated ID")
@@ -52,7 +60,7 @@ class CarServiceCreateTest {
 
         assertThat(id).isNotNull();
 
-        var saved = carService.findById(id);
+        var saved = carTestReader.findById(id);
 
         assertThat(saved.year()).isEqualTo(YEAR_2023);
         assertThat(saved.modelId()).isEqualTo(COROLLA_ID);
@@ -74,7 +82,7 @@ class CarServiceCreateTest {
 
         var id = carService.create(request);
 
-        var saved = carService.findById(id);
+        var saved = carTestReader.findById(id);
 
         assertThat(saved.categoryIds()).isEmpty();
         assertThat(saved.year()).isEqualTo(YEAR_2023);

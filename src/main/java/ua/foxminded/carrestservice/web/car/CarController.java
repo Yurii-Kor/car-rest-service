@@ -1,8 +1,6 @@
-
 package ua.foxminded.carrestservice.web.car;
 
 import java.net.URI;
-import java.util.TreeSet;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,11 +11,12 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
 import ua.foxminded.carrestservice.service.car.dto.CarDetails;
 import ua.foxminded.carrestservice.service.car.dto.CarRequest;
+import ua.foxminded.carrestservice.service.car.dto.CarSearchRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
-import ua.foxminded.carrestservice.web.car.dto.CarResponse;
 
 @RestController
 @RequestMapping("/api/v1/cars")
@@ -25,6 +24,7 @@ import ua.foxminded.carrestservice.web.car.dto.CarResponse;
 public class CarController {
 
     private final CarService carService;
+    private final CarQueryService carQueryService;
 
     @PostMapping
     public ResponseEntity<Void> create(
@@ -38,16 +38,16 @@ public class CarController {
     }
 
     @GetMapping("/{id}")
-    public CarResponse findById(@PathVariable Long id) {
-        return toResponse(carService.findById(id));
+    public CarDetails findById(@PathVariable Long id) {
+        return carQueryService.findById(id);
     }
 
     @GetMapping
-    public Page<CarResponse> findAll(
+    public Page<CarDetails> findAll(
+            @Valid @ModelAttribute CarSearchRequest request,
             @PageableDefault(size = 12, sort = "id") Pageable pageable) {
 
-        return carService.findAll(pageable)
-                .map(this::toResponse);
+        return carQueryService.findAll(request, pageable);
     }
 
     @PatchMapping("/{id}")
@@ -63,14 +63,5 @@ public class CarController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         carService.delete(id);
-    }
-
-    private CarResponse toResponse(CarDetails details) {
-        return new CarResponse(
-                details.id(),
-                details.year().getValue(),
-                details.modelId(),
-                details.manufacturerId(),
-                new TreeSet<>(details.categoryIds()));
     }
 }

@@ -2,14 +2,10 @@ package ua.foxminded.carrestservice.service.car;
 
 import java.time.Year;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,9 +18,6 @@ import ua.foxminded.carrestservice.model.CarModel;
 import ua.foxminded.carrestservice.model.Category;
 import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.repository.CategoryRepository;
-import ua.foxminded.carrestservice.repository.projection.CarCategoryRow;
-import ua.foxminded.carrestservice.repository.projection.CarRow;
-import ua.foxminded.carrestservice.service.car.dto.CarDetails;
 import ua.foxminded.carrestservice.service.car.dto.CarRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
 import ua.foxminded.carrestservice.service.car.exception.CarManufacturerChangeNotAllowedException;
@@ -33,14 +26,13 @@ import ua.foxminded.carrestservice.service.carmodel.CarModelService;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class CarService {
 
     private final CarRepository carRepository;
     private final CarModelService carModelService;
     private final CategoryRepository categoryRepository;
 
-    @Transactional
     public Long create(CarRequest request) {
         var model = carModelService.findById(request.modelId());
 
@@ -58,34 +50,6 @@ public class CarService {
         return car.getId();
     }
 
-    public CarDetails findById(Long id) {
-        var row = carRepository.findRowById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Car not found: id=%d".formatted(id)));
-
-        var categoriesByCar = loadCategoryIds(List.of(id));
-
-        return toDetails(row, categoriesByCar);
-    }
-
-    public Page<CarDetails> findAll(Pageable pageable) {
-        var page = carRepository.findAllRows(pageable);
-
-        if (page.isEmpty()) {
-            return page.map(row -> toDetails(row, Map.of()));
-        }
-
-        var ids = page.getContent()
-                .stream()
-                .map(CarRow::id)
-                .toList();
-
-        var categoriesByCar = loadCategoryIds(ids);
-
-        return page.map(row -> toDetails(row, categoriesByCar));
-    }
-
-    @Transactional
     public void update(Long id, CarUpdateRequest request) {
         var car = findEntityById(id);
 
@@ -118,7 +82,6 @@ public class CarService {
         log.info("Car updated: id={}", id);
     }
 
-    @Transactional
     public void delete(Long id) {
         carRepository.delete(findEntityById(id));
 
@@ -129,31 +92,6 @@ public class CarService {
         return carRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Car not found: id=%d".formatted(id)));
-    }
-
-    private Map<Long, Set<Long>> loadCategoryIds(List<Long> carIds) {
-        return carRepository.findCategoryRowsByCarIds(carIds)
-                .stream()
-                .collect(Collectors.groupingBy(
-                        CarCategoryRow::carId,
-                        Collectors.mapping(
-                                CarCategoryRow::categoryId,
-                                Collectors.toSet())));
-    }
-
-    private CarDetails toDetails(
-            CarRow row,
-            Map<Long, Set<Long>> categoriesByCar) {
-
-        var categoryIds = categoriesByCar.getOrDefault(
-                row.id(), Set.of());
-
-        return new CarDetails(
-                row.id(),
-                row.year(),
-                row.modelId(),
-                row.manufacturerId(),
-                Set.copyOf(categoryIds));
     }
 
     private Optional<Year> getYear(Car car, CarUpdateRequest request) {

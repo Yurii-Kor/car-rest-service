@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
 import ua.foxminded.carrestservice.service.car.exception.CarManufacturerChangeNotAllowedException;
@@ -37,6 +38,9 @@ class CarUpdateControllerWebMvcTest {
 
     @MockitoBean
     private CarService carService;
+
+    @MockitoBean
+    private CarQueryService carQueryService;
 
     @Test
     @DisplayName("update: year only -> returns 204 No Content with partial request")

@@ -1,3 +1,4 @@
+
 package ua.foxminded.carrestservice.service.car;
 
 import static org.assertj.core.api.Assertions.*;
@@ -19,10 +20,14 @@ import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
 import ua.foxminded.carrestservice.service.car.exception.CarManufacturerChangeNotAllowedException;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
+import ua.foxminded.carrestservice.testutil.CarTestReader;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgreSQLTestConfig.class)
+@Import({
+    PostgreSQLTestConfig.class,
+    CarTestReader.class
+})
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @Sql(
         scripts = "/sql/car/car-service-base.sql",
@@ -36,6 +41,9 @@ class CarServiceUpdateTest {
 
     @Autowired
     private CarService carService;
+    
+    @Autowired
+    private CarTestReader carTestReader;
 
     @Test
     @DisplayName("update: year only -> updates year and preserves other fields")
@@ -44,7 +52,7 @@ class CarServiceUpdateTest {
 
         carService.update(CAR_ID, request);
 
-        var updated = carService.findById(CAR_ID);
+        var updated = carTestReader.findById(CAR_ID);
 
         assertThat(updated.year()).isEqualTo(YEAR_2024);
         assertThat(updated.modelId()).isEqualTo(COROLLA_ID);
@@ -60,7 +68,7 @@ class CarServiceUpdateTest {
 
         carService.update(CAR_ID, request);
 
-        var updated = carService.findById(CAR_ID);
+        var updated = carTestReader.findById(CAR_ID);
 
         assertThat(updated.modelId()).isEqualTo(CAMRY_ID);
         assertThat(updated.manufacturerId()).isEqualTo(TOYOTA_ID);
@@ -75,7 +83,7 @@ class CarServiceUpdateTest {
 
         carService.update(CAR_ID, request);
 
-        var updated = carService.findById(CAR_ID);
+        var updated = carTestReader.findById(CAR_ID);
 
         assertThat(updated.year()).isEqualTo(YEAR_2023);
         assertThat(updated.modelId()).isEqualTo(CAMRY_ID);
@@ -90,7 +98,7 @@ class CarServiceUpdateTest {
 
         carService.update(CAR_ID, request);
 
-        var updated = carService.findById(CAR_ID);
+        var updated = carTestReader.findById(CAR_ID);
 
         assertThat(updated.categoryIds()).containsExactly(SUV_ID);
         assertThat(updated.year()).isEqualTo(YEAR_2020);
@@ -105,7 +113,7 @@ class CarServiceUpdateTest {
 
         carService.update(CAR_ID, request);
 
-        var updated = carService.findById(CAR_ID);
+        var updated = carTestReader.findById(CAR_ID);
 
         assertThat(updated.categoryIds()).isEmpty();
     }
@@ -113,18 +121,18 @@ class CarServiceUpdateTest {
     @Test
     @DisplayName("update: all fields omitted -> preserves existing car")
     void update_allFieldsNull_keepsCarUnchanged() {
-        var before = carService.findById(CAR_ID);
+        var before = carTestReader.findById(CAR_ID);
         var request = new CarUpdateRequest(null, null, null);
 
         carService.update(CAR_ID, request);
 
-        assertThat(carService.findById(CAR_ID)).isEqualTo(before);
+        assertThat(carTestReader.findById(CAR_ID)).isEqualTo(before);
     }
 
     @Test
     @DisplayName("update: unchanged field values -> does not report duplicate")
     void update_sameValues_keepsCarUnchanged() {
-        var before = carService.findById(CAR_ID);
+        var before = carTestReader.findById(CAR_ID);
 
         var request = new CarUpdateRequest(
                 YEAR_2020,
@@ -133,7 +141,7 @@ class CarServiceUpdateTest {
 
         carService.update(CAR_ID, request);
 
-        assertThat(carService.findById(CAR_ID)).isEqualTo(before);
+        assertThat(carTestReader.findById(CAR_ID)).isEqualTo(before);
     }
 
     @Test
@@ -144,7 +152,7 @@ class CarServiceUpdateTest {
         assertThatThrownBy(() -> carService.update(CAR_ID, request))
                 .isInstanceOf(EntityExistsException.class);
 
-        assertThat(carService.findById(CAR_ID).year())
+        assertThat(carTestReader.findById(CAR_ID).year())
                 .isEqualTo(YEAR_2020);
     }
 
@@ -157,7 +165,7 @@ class CarServiceUpdateTest {
         assertThatThrownBy(() -> carService.update(CAR_ID, request))
                 .isInstanceOf(EntityExistsException.class);
 
-        var unchanged = carService.findById(CAR_ID);
+        var unchanged = carTestReader.findById(CAR_ID);
 
         assertThat(unchanged.year()).isEqualTo(YEAR_2020);
         assertThat(unchanged.modelId()).isEqualTo(COROLLA_ID);
@@ -171,7 +179,7 @@ class CarServiceUpdateTest {
         assertThatThrownBy(() -> carService.update(CAR_ID, request))
                 .isInstanceOf(CarManufacturerChangeNotAllowedException.class);
 
-        var unchanged = carService.findById(CAR_ID);
+        var unchanged = carTestReader.findById(CAR_ID);
 
         assertThat(unchanged.modelId()).isEqualTo(COROLLA_ID);
         assertThat(unchanged.manufacturerId()).isEqualTo(TOYOTA_ID);
@@ -185,14 +193,14 @@ class CarServiceUpdateTest {
         assertThatThrownBy(() -> carService.update(CAR_ID, request))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        assertThat(carService.findById(CAR_ID).modelId())
+        assertThat(carTestReader.findById(CAR_ID).modelId())
                 .isEqualTo(COROLLA_ID);
     }
 
     @Test
     @DisplayName("update: unknown category -> preserves all existing car fields")
     void update_unknownCategory_preservesCar() {
-        var before = carService.findById(CAR_ID);
+        var before = carTestReader.findById(CAR_ID);
 
         var request = new CarUpdateRequest(
                 YEAR_2024,
@@ -203,7 +211,7 @@ class CarServiceUpdateTest {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Category not found");
 
-        assertThat(carService.findById(CAR_ID)).isEqualTo(before);
+        assertThat(carTestReader.findById(CAR_ID)).isEqualTo(before);
     }
 
     @Test

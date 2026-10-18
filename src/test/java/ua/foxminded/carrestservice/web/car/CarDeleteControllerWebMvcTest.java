@@ -16,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
 
 @WebMvcTest(CarController.class)
@@ -27,6 +28,9 @@ class CarDeleteControllerWebMvcTest {
 
     @MockitoBean
     private CarService carService;
+
+    @MockitoBean
+    private CarQueryService carQueryService;
 
     @Test
     @DisplayName("delete: existing car -> returns 204 No Content")

@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
 import ua.foxminded.carrestservice.service.car.dto.CarRequest;
 
@@ -36,6 +37,9 @@ class CarCreateControllerWebMvcTest {
 
     @MockitoBean
     private CarService carService;
+
+    @MockitoBean
+    private CarQueryService carQueryService;
 
     @Test
     @DisplayName("create: valid car request -> returns 201 Created and Location header")

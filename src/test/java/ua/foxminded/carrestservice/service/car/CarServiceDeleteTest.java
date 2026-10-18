@@ -1,15 +1,15 @@
+
 package ua.foxminded.carrestservice.service.car;
 
 import static org.assertj.core.api.Assertions.*;
 import static ua.foxminded.carrestservice.service.car.CarServiceTestConstants.*;
-
-import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
@@ -18,10 +18,14 @@ import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.repository.CategoryRepository;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
+import ua.foxminded.carrestservice.testutil.CarTestReader;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(PostgreSQLTestConfig.class)
+@Import({
+        PostgreSQLTestConfig.class,
+        CarTestReader.class
+})
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @Sql(
         scripts = "/sql/car/car-service-base.sql",
@@ -42,6 +46,12 @@ class CarServiceDeleteTest {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Autowired
+    private CarTestReader carTestReader;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     @DisplayName("delete: existing car -> removes car and category associations")
     void delete_existingCar_removesCarAndAssociations() {
@@ -49,8 +59,12 @@ class CarServiceDeleteTest {
 
         assertThat(carRepository.existsById(CAR_ID)).isFalse();
 
-        assertThat(carRepository.findCategoryRowsByCarIds(
-                List.of(CAR_ID))).isEmpty();
+        var associationCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM car_category WHERE car_id = ?",
+                Long.class,
+                CAR_ID);
+
+        assertThat(associationCount).isZero();
 
         assertThat(carRepository.count())
                 .isEqualTo(INITIAL_CAR_COUNT - 1);
@@ -66,7 +80,7 @@ class CarServiceDeleteTest {
         assertThat(categoryRepository.existsById(SEDAN_ID)).isTrue();
         assertThat(categoryRepository.existsById(HYBRID_ID)).isTrue();
 
-        var otherCar = carService.findById(SECOND_CAR_ID);
+        var otherCar = carTestReader.findById(SECOND_CAR_ID);
 
         assertThat(otherCar.categoryIds()).containsExactly(SEDAN_ID);
     }

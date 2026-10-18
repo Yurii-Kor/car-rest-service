@@ -1,4 +1,3 @@
-
 spring:
   application:
     name: car-rest-service
@@ -20,4 +19,4 @@ spring:
 
 logging:
   level:
-    root: INFO
+    org.hibernate.SQL: DEBUG
