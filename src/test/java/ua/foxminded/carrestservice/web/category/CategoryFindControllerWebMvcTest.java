@@ -1,6 +1,6 @@
+
 package ua.foxminded.carrestservice.web.category;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -62,19 +61,25 @@ class CategoryFindControllerWebMvcTest {
     @Test
     @DisplayName("findAll: no pagination parameters -> uses default page size and sorting")
     void findAll_withoutParameters_usesDefaultPagination() throws Exception {
+        var pageable = PageRequest.of(0, 12, Sort.by("name"));
+
         var categories = List.of(
                 category(SEDAN_ID, SEDAN_NAME),
                 category(SUV_ID, SUV_NAME));
 
-        when(categoryService.findAll(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(categories));
+        when(categoryService.findAll(pageable))
+                .thenReturn(new PageImpl<>(
+                        categories, pageable, categories.size()));
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content.length()").value(2));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.page.size").value(12))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.totalElements").value(2))
+                .andExpect(jsonPath("$.page.totalPages").value(1));
 
-        verify(categoryService).findAll(
-                PageRequest.of(0, 12, Sort.by("name")));
+        verify(categoryService).findAll(pageable);
     }
 
     @Test
@@ -98,8 +103,10 @@ class CategoryFindControllerWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(SEDAN_ID))
                 .andExpect(jsonPath("$.content[0].name").value(SEDAN_NAME))
-                .andExpect(jsonPath("$.totalElements").value(3))
-                .andExpect(jsonPath("$.number").value(1));
+                .andExpect(jsonPath("$.page.size").value(2))
+                .andExpect(jsonPath("$.page.number").value(1))
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$.page.totalPages").value(2));
 
         verify(categoryService).findAll(pageable);
     }

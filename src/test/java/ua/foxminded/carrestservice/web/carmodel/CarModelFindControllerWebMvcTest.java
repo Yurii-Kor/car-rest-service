@@ -1,3 +1,4 @@
+
 package ua.foxminded.carrestservice.web.carmodel;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -67,23 +68,27 @@ class CarModelFindControllerWebMvcTest {
     void findAllByManufacturerId_withoutParameters_usesDefaultPagination()
             throws Exception {
 
+        var pageable = PageRequest.of(0, 12, Sort.by("name"));
+
         var models = List.of(
                 carModel(CAMRY_ID, CAMRY_NAME, TOYOTA_ID, TOYOTA_NAME),
                 carModel(COROLLA_ID, COROLLA_NAME, TOYOTA_ID, TOYOTA_NAME));
 
-        when(carModelService.findAllByManufacturerId(
-                eq(TOYOTA_ID), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(models));
+        when(carModelService.findAllByManufacturerId(TOYOTA_ID, pageable))
+                .thenReturn(new PageImpl<>(
+                        models, pageable, models.size()));
 
         mockMvc.perform(get(MANUFACTURER_MODELS_URL, TOYOTA_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(2))
                 .andExpect(jsonPath("$.content[0].name").value(CAMRY_NAME))
-                .andExpect(jsonPath("$.content[1].name").value(COROLLA_NAME));
+                .andExpect(jsonPath("$.content[1].name").value(COROLLA_NAME))
+                .andExpect(jsonPath("$.page.size").value(12))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.totalElements").value(2))
+                .andExpect(jsonPath("$.page.totalPages").value(1));
 
-        verify(carModelService).findAllByManufacturerId(
-                TOYOTA_ID,
-                PageRequest.of(0, 12, Sort.by("name")));
+        verify(carModelService).findAllByManufacturerId(TOYOTA_ID, pageable);
     }
 
     @Test
@@ -109,8 +114,10 @@ class CarModelFindControllerWebMvcTest {
                 .param("sort", "name,desc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(CAMRY_ID))
-                .andExpect(jsonPath("$.totalElements").value(3))
-                .andExpect(jsonPath("$.number").value(1));
+                .andExpect(jsonPath("$.page.size").value(2))
+                .andExpect(jsonPath("$.page.number").value(1))
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$.page.totalPages").value(2));
 
         verify(carModelService).findAllByManufacturerId(TOYOTA_ID, pageable);
     }

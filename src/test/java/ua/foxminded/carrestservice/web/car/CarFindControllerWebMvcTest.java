@@ -102,7 +102,7 @@ class CarFindControllerWebMvcTest {
                         MANUFACTURER_ID, SUV_ID));
 
         when(carQueryService.findAll(request, pageable))
-                .thenReturn(new PageImpl<>(cars, pageable, 2));
+                .thenReturn(new PageImpl<>(cars, pageable, cars.size()));
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
@@ -111,7 +111,10 @@ class CarFindControllerWebMvcTest {
                 .andExpect(jsonPath("$.content[0].year").value(2020))
                 .andExpect(jsonPath("$.content[1].id")
                         .value(SECOND_CAR_ID))
-                .andExpect(jsonPath("$.totalElements").value(2));
+                .andExpect(jsonPath("$.page.size").value(12))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.totalElements").value(2))
+                .andExpect(jsonPath("$.page.totalPages").value(1));
 
         verify(carQueryService).findAll(request, pageable);
     }
@@ -143,9 +146,10 @@ class CarFindControllerWebMvcTest {
                 .param("sort", "id,desc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(CAR_ID))
-                .andExpect(jsonPath("$.totalElements").value(3))
-                .andExpect(jsonPath("$.number").value(1))
-                .andExpect(jsonPath("$.totalPages").value(2));
+                .andExpect(jsonPath("$.page.size").value(2))
+                .andExpect(jsonPath("$.page.number").value(1))
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$.page.totalPages").value(2));
 
         verify(carQueryService).findAll(request, pageable);
     }
@@ -164,7 +168,10 @@ class CarFindControllerWebMvcTest {
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(0))
-                .andExpect(jsonPath("$.totalElements").value(0));
+                .andExpect(jsonPath("$.page.size").value(12))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.totalElements").value(0))
+                .andExpect(jsonPath("$.page.totalPages").value(0));
 
         verify(carQueryService).findAll(request, pageable);
     }
@@ -201,7 +208,8 @@ class CarFindControllerWebMvcTest {
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(CAR_ID))
                 .andExpect(jsonPath("$.content[0].year").value(2020))
-                .andExpect(jsonPath("$.totalElements").value(1));
+                .andExpect(jsonPath("$.page.totalElements").value(1))
+                .andExpect(jsonPath("$.page.totalPages").value(1));
 
         verify(carQueryService).findAll(request, pageable);
     }

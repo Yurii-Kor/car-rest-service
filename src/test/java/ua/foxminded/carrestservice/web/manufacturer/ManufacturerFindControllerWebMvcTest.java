@@ -1,6 +1,6 @@
+
 package ua.foxminded.carrestservice.web.manufacturer;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -63,19 +62,25 @@ class ManufacturerFindControllerWebMvcTest {
     @Test
     @DisplayName("findAll: no pagination parameters -> uses default page size and sorting")
     void findAll_withoutParameters_usesDefaultPagination() throws Exception {
+        var pageable = PageRequest.of(0, 12, Sort.by("name"));
+
         var manufacturers = List.of(
                 manufacturer(BMW_ID, BMW_NAME),
                 manufacturer(TOYOTA_ID, TOYOTA_NAME));
 
-        when(manufacturerService.findAll(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(manufacturers));
+        when(manufacturerService.findAll(pageable))
+                .thenReturn(new PageImpl<>(
+                        manufacturers, pageable, manufacturers.size()));
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content.length()").value(2));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.page.size").value(12))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.totalElements").value(2))
+                .andExpect(jsonPath("$.page.totalPages").value(1));
 
-        verify(manufacturerService).findAll(
-                PageRequest.of(0, 12, Sort.by("name")));
+        verify(manufacturerService).findAll(pageable);
     }
 
     @Test
@@ -98,8 +103,10 @@ class ManufacturerFindControllerWebMvcTest {
                 .param("sort", "name,desc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(TOYOTA_ID))
-                .andExpect(jsonPath("$.totalElements").value(3))
-                .andExpect(jsonPath("$.number").value(1));
+                .andExpect(jsonPath("$.page.size").value(2))
+                .andExpect(jsonPath("$.page.number").value(1))
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$.page.totalPages").value(2));
 
         verify(manufacturerService).findAll(pageable);
     }
