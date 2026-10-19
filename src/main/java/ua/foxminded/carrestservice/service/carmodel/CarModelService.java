@@ -15,9 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import ua.foxminded.carrestservice.model.CarModel;
 import ua.foxminded.carrestservice.repository.CarModelRepository;
 import ua.foxminded.carrestservice.repository.CarRepository;
+import ua.foxminded.carrestservice.repository.ManufacturerRepository;
 import ua.foxminded.carrestservice.service.carmodel.dto.CarModelRequest;
 import ua.foxminded.carrestservice.service.exception.EntityInUseException;
-import ua.foxminded.carrestservice.service.manufacturer.ManufacturerService;
 
 @Slf4j
 @Service
@@ -27,14 +27,14 @@ public class CarModelService {
 
     private final CarModelRepository carModelRepository;
     private final CarRepository carRepository;
-    
-    private final ManufacturerService manufacturerService;
+    private final ManufacturerRepository manufacturerRepository;
 
     @Transactional
     public Long create(Long manufacturerId, CarModelRequest request) {
-        var manufacturer = manufacturerService.findById(manufacturerId);
-
+        checkManufacturerExists(manufacturerId);
         checkNameAvailable(manufacturerId, request.name());
+
+        var manufacturer = manufacturerRepository.getReferenceById(manufacturerId);
 
         var carModel = carModelRepository.save(
                 new CarModel(request.name(), manufacturer));
@@ -53,14 +53,14 @@ public class CarModelService {
     public Page<CarModel> findAllByManufacturerId(
             Long manufacturerId, Pageable pageable) {
 
-        manufacturerService.findById(manufacturerId);
+        checkManufacturerExists(manufacturerId);
 
         return carModelRepository.findAllByManufacturerId(
                 manufacturerId, pageable);
     }
 
     public List<CarModel> findAllForSelection(Long manufacturerId) {
-        manufacturerService.findById(manufacturerId);
+        checkManufacturerExists(manufacturerId);
 
         return carModelRepository.findAllByManufacturerId(
                 manufacturerId, Sort.by("name"));
@@ -93,6 +93,13 @@ public class CarModelService {
         carModelRepository.delete(carModel);
 
         log.info("Car model deleted: id={}", id);
+    }
+
+    private void checkManufacturerExists(Long manufacturerId) {
+        if (!manufacturerRepository.existsById(manufacturerId)) {
+            throw new EntityNotFoundException(
+                    "Manufacturer not found: id=%d".formatted(manufacturerId));
+        }
     }
 
     private void checkNameAvailable(Long manufacturerId, String name) {

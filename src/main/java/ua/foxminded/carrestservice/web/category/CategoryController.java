@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import ua.foxminded.carrestservice.model.Category;
 import ua.foxminded.carrestservice.service.category.CategoryService;
 import ua.foxminded.carrestservice.service.category.dto.CategoryRequest;
 import ua.foxminded.carrestservice.web.category.dto.CategoryResponse;
@@ -37,7 +36,7 @@ public class CategoryController {
 
     @GetMapping("/{id}")
     public CategoryResponse findById(@PathVariable Long id) {
-        return toResponse(categoryService.findById(id));
+        return new CategoryResponse(categoryService.findById(id));
     }
 
     @GetMapping
@@ -45,14 +44,14 @@ public class CategoryController {
             @PageableDefault(size = 12, sort = "name") Pageable pageable) {
 
         return categoryService.findAll(pageable)
-                .map(this::toResponse);
+                .map(CategoryResponse::new);
     }
 
     @GetMapping("/options")
     public List<CategoryResponse> findAllForSelection() {
         return categoryService.findAllForSelection()
                 .stream()
-                .map(this::toResponse)
+                .map(CategoryResponse::new)
                 .toList();
     }
 
@@ -69,11 +68,5 @@ public class CategoryController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         categoryService.delete(id);
-    }
-
-    private CategoryResponse toResponse(Category category) {
-        return new CategoryResponse(
-                category.getId(),
-                category.getName());
     }
 }

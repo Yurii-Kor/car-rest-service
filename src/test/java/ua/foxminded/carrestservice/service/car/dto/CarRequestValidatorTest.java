@@ -20,6 +20,7 @@ import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
 import ua.foxminded.carrestservice.common.validation.MinYear;
 
 class CarRequestValidatorTest {
@@ -167,6 +168,30 @@ class CarRequestValidatorTest {
                         MODEL_ID,
                         Collections.singleton(null),
                         "categoryIds",
-                        NotNull.class));
+                        NotNull.class),
+
+                Arguments.of(
+                        "zero model ID",
+                        Year.of(2020),
+                        0L,
+                        Set.of(CATEGORY_ID),
+                        "modelId",
+                        Positive.class),
+                
+                Arguments.of(
+                        "negative model ID",
+                        Year.of(2020),
+                        -1L,
+                        Set.of(CATEGORY_ID),
+                        "modelId",
+                        Positive.class),
+                
+                Arguments.of(
+                        "negative category ID",
+                        Year.of(2020),
+                        MODEL_ID,
+                        Set.of(-1L),
+                        "categoryIds",
+                        Positive.class));
     }
 }

@@ -5,6 +5,7 @@ import java.util.Set;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
 import ua.foxminded.carrestservice.common.validation.MinYear;
 
 public record CarUpdateRequest(
@@ -13,9 +14,10 @@ public record CarUpdateRequest(
         @MinYear(1900)
         Year year,
 
+        @Positive
         Long modelId,
 
-        Set<@NotNull Long> categoryIds
+        Set<@NotNull @Positive Long> categoryIds
 
 ) {
 }

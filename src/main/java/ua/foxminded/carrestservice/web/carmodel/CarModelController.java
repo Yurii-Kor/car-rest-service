@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import ua.foxminded.carrestservice.model.CarModel;
 import ua.foxminded.carrestservice.service.carmodel.CarModelService;
 import ua.foxminded.carrestservice.service.carmodel.dto.CarModelRequest;
 import ua.foxminded.carrestservice.web.carmodel.dto.CarModelResponse;
@@ -38,7 +37,7 @@ public class CarModelController {
 
     @GetMapping("/models/{id}")
     public CarModelResponse findById(@PathVariable Long id) {
-        return toResponse(carModelService.findById(id));
+        return new CarModelResponse(carModelService.findById(id));
     }
 
     @GetMapping("/manufacturers/{manufacturerId}/models")
@@ -48,7 +47,7 @@ public class CarModelController {
 
         return carModelService.findAllByManufacturerId(
                         manufacturerId, pageable)
-                .map(this::toResponse);
+                .map(CarModelResponse::new);
     }
 
     @GetMapping("/manufacturers/{manufacturerId}/models/options")
@@ -57,7 +56,7 @@ public class CarModelController {
 
         return carModelService.findAllForSelection(manufacturerId)
                 .stream()
-                .map(this::toResponse)
+                .map(CarModelResponse::new)
                 .toList();
     }
 
@@ -74,12 +73,5 @@ public class CarModelController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         carModelService.delete(id);
-    }
-
-    private CarModelResponse toResponse(CarModel carModel) {
-        return new CarModelResponse(
-                carModel.getId(),
-                carModel.getName(),
-                carModel.getManufacturer().getId());
     }
 }

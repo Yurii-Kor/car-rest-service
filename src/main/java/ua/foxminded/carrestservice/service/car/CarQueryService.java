@@ -3,8 +3,7 @@ package ua.foxminded.carrestservice.service.car;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +15,6 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import ua.foxminded.carrestservice.model.Car;
-import ua.foxminded.carrestservice.model.Category;
 import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.service.car.dto.CarDetails;
 import ua.foxminded.carrestservice.service.car.dto.CarSearchRequest;
@@ -33,7 +31,7 @@ public class CarQueryService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Car not found: id=%d".formatted(id)));
 
-        return toDetails(car);
+        return new CarDetails(car);
     }
 
     public Page<CarDetails> findAll(
@@ -46,7 +44,7 @@ public class CarQueryService {
                 categoryFilter(request));
 
         return carRepository.findAll(specification, pageable)
-                .map(this::toDetails);
+                .map(CarDetails::new);
     }
 
     private Specification<Car> manufacturerModelFilter(
@@ -115,16 +113,5 @@ public class CarQueryService {
                     return builder.equal(
                             subquery, (long) ids.size());
                 }).orElseGet(builder::conjunction);
-    }
-
-    private CarDetails toDetails(Car car) {
-        return new CarDetails(
-                car.getId(),
-                car.getYear(),
-                car.getModel().getId(),
-                car.getModel().getManufacturer().getId(),
-                car.getCategories().stream()
-                        .map(Category::getId)
-                        .collect(Collectors.toCollection(TreeSet::new)));
     }
 }

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import ua.foxminded.carrestservice.model.Manufacturer;
 import ua.foxminded.carrestservice.service.manufacturer.ManufacturerService;
 import ua.foxminded.carrestservice.service.manufacturer.dto.ManufacturerRequest;
 import ua.foxminded.carrestservice.web.manufacturer.dto.ManufacturerResponse;
@@ -37,7 +36,7 @@ public class ManufacturerController {
 
     @GetMapping("/{id}")
     public ManufacturerResponse findById(@PathVariable Long id) {
-        return toResponse(manufacturerService.findById(id));
+        return new ManufacturerResponse(manufacturerService.findById(id));
     }
 
     @GetMapping
@@ -45,13 +44,13 @@ public class ManufacturerController {
             @PageableDefault(size = 12, sort = "name") Pageable pageable) {
 
         return manufacturerService.findAll(pageable)
-                .map(this::toResponse);
+                .map(ManufacturerResponse::new);
     }
 
     @GetMapping("/options")
     public List<ManufacturerResponse> findAllForSelection() {
         return manufacturerService.findAllForSelection().stream()
-                .map(this::toResponse)
+                .map(ManufacturerResponse::new)
                 .toList();
     }
 
@@ -68,11 +67,5 @@ public class ManufacturerController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         manufacturerService.delete(id);
-    }
-
-    private ManufacturerResponse toResponse(Manufacturer manufacturer) {
-        return new ManufacturerResponse(
-                manufacturer.getId(),
-                manufacturer.getName());
     }
 }

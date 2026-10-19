@@ -16,12 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 import ua.foxminded.carrestservice.model.Car;
 import ua.foxminded.carrestservice.model.CarModel;
 import ua.foxminded.carrestservice.model.Category;
+import ua.foxminded.carrestservice.repository.CarModelRepository;
 import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.repository.CategoryRepository;
 import ua.foxminded.carrestservice.service.car.dto.CarRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
 import ua.foxminded.carrestservice.service.car.exception.CarManufacturerChangeNotAllowedException;
-import ua.foxminded.carrestservice.service.carmodel.CarModelService;
 
 @Slf4j
 @Service
@@ -30,15 +30,15 @@ import ua.foxminded.carrestservice.service.carmodel.CarModelService;
 public class CarService {
 
     private final CarRepository carRepository;
-    private final CarModelService carModelService;
+    private final CarModelRepository carModelRepository;
     private final CategoryRepository categoryRepository;
 
     public Long create(CarRequest request) {
-        var model = carModelService.findById(request.modelId());
-
+        checkModelExists(request.modelId());
         checkCombinationAvailable(request.modelId(), request.year());
 
         var categories = resolveCategories(request.categoryIds());
+        var model = carModelRepository.getReferenceById(request.modelId());
 
         var car = new Car(request.year(), model);
         car.getCategories().addAll(categories);
@@ -74,8 +74,8 @@ public class CarService {
             return;
         }
 
-        yearUpdate.ifPresent(year -> car.setYear(year));
-        modelUpdate.ifPresent(model -> car.setModel(model));
+        yearUpdate.ifPresent(car::setYear);
+        modelUpdate.ifPresent(car::setModel);
         categoriesUpdate.ifPresent(categories ->
                 updateCategories(car, categories));
 
@@ -99,7 +99,9 @@ public class CarService {
                 .filter(year -> !year.equals(car.getYear()));
     }
 
-    private Optional<CarModel> getModel(Car car, CarUpdateRequest request) {
+    private Optional<CarModel> getModel(
+            Car car, CarUpdateRequest request) {
+
         return Optional.ofNullable(request.modelId())
                 .filter(modelId -> !modelId.equals(car.getModel().getId()))
                 .map(modelId -> resolveModelForUpdate(car, modelId));
@@ -119,13 +121,14 @@ public class CarService {
     }
 
     private CarModel resolveModelForUpdate(Car car, Long modelId) {
-        var model = carModelService.findById(modelId);
+        var requestedManufacturerId = carModelRepository
+                .findManufacturerIdById(modelId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Car model not found: id=%d".formatted(modelId)));
 
         var currentManufacturerId = car.getModel()
                 .getManufacturer()
                 .getId();
-
-        var requestedManufacturerId = model.getManufacturer().getId();
 
         if (!currentManufacturerId.equals(requestedManufacturerId)) {
             throw new CarManufacturerChangeNotAllowedException(
@@ -134,7 +137,14 @@ public class CarService {
                     requestedManufacturerId);
         }
 
-        return model;
+        return carModelRepository.getReferenceById(modelId);
+    }
+
+    private void checkModelExists(Long modelId) {
+        if (!carModelRepository.existsById(modelId)) {
+            throw new EntityNotFoundException(
+                    "Car model not found: id=%d".formatted(modelId));
+        }
     }
 
     private void checkCombinationAvailable(Long modelId, Year year) {
