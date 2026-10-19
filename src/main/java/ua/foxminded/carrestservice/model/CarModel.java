@@ -1,5 +1,8 @@
 package ua.foxminded.carrestservice.model;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,5 +24,6 @@ public class CarModel {
     @NonNull
     @Setter(AccessLevel.NONE)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Manufacturer manufacturer;
 }

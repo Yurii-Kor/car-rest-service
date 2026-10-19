@@ -13,7 +13,9 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ua.foxminded.carrestservice.model.Manufacturer;
+import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.repository.ManufacturerRepository;
+import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 import ua.foxminded.carrestservice.service.manufacturer.dto.ManufacturerRequest;
 
 @Slf4j
@@ -23,6 +25,7 @@ import ua.foxminded.carrestservice.service.manufacturer.dto.ManufacturerRequest;
 public class ManufacturerService {
 
     private final ManufacturerRepository manufacturerRepository;
+    private final CarRepository carRepository;
 
     @Transactional
     public Long create(ManufacturerRequest request) {
@@ -64,9 +67,17 @@ public class ManufacturerService {
 
     @Transactional
     public void delete(Long id) {
-        manufacturerRepository.delete(findById(id));
-
-        log.info("Manufacturer delete requested: id={}", id);
+        var manufacturer = findById(id);
+    
+        if (carRepository.existsByModel_Manufacturer_Id(id)) {
+            throw new EntityInUseException(
+                    "Cannot delete manufacturer with existing cars: id=%d"
+                            .formatted(id));
+        }
+    
+        manufacturerRepository.delete(manufacturer);
+    
+        log.info("Manufacturer deleted: id={}", id);
     }
 
     private void checkNameAvailable(String name) {

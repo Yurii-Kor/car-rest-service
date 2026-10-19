@@ -14,8 +14,10 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ua.foxminded.carrestservice.model.Category;
+import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.repository.CategoryRepository;
 import ua.foxminded.carrestservice.service.category.dto.CategoryRequest;
+import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 
 @Slf4j
 @Service
@@ -24,6 +26,7 @@ import ua.foxminded.carrestservice.service.category.dto.CategoryRequest;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final CarRepository carRepository;
 
     @Transactional
     public Long create(CategoryRequest request) {
@@ -65,9 +68,17 @@ public class CategoryService {
 
     @Transactional
     public void delete(Long id) {
-        categoryRepository.delete(findById(id));
+        var category = findById(id);
 
-        log.info("Category deletion requested: id={}", id);
+        if (carRepository.existsByCategories_Id(id)) {
+            throw new EntityInUseException(
+                    "Cannot delete category with existing cars: id=%d"
+                            .formatted(id));
+        }
+
+        categoryRepository.delete(category);
+
+        log.info("Category deleted: id={}", id);
     }
 
     private void checkNameAvailable(String name) {

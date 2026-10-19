@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
@@ -37,6 +38,9 @@ class ManufacturerServiceDeleteTest {
     @Autowired
     private ManufacturerRepository manufacturerRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     @DisplayName("delete: manufacturer without models -> removes entity from database")
     void delete_manufacturerWithoutModels_removesManufacturer() {
@@ -53,5 +57,35 @@ class ManufacturerServiceDeleteTest {
                 .isInstanceOf(EntityNotFoundException.class);
 
         assertThat(manufacturerRepository.count()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("delete: manufacturer with unused models -> removes manufacturer and all its models")
+    void delete_manufacturerWithUnusedModels_removesManufacturerAndModels() {
+        jdbcTemplate.update(
+                "INSERT INTO car_model (name, manufacturer_id) VALUES (?, ?)",
+                "Test Model A", UNUSED_ID);
+    
+        jdbcTemplate.update(
+                "INSERT INTO car_model (name, manufacturer_id) VALUES (?, ?)",
+                "Test Model B", UNUSED_ID);
+    
+        var modelsBefore = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM car_model WHERE manufacturer_id = ?",
+                Long.class,
+                UNUSED_ID);
+    
+        assertThat(modelsBefore).isEqualTo(2L);
+    
+        manufacturerService.delete(UNUSED_ID);
+    
+        assertThat(manufacturerRepository.existsById(UNUSED_ID)).isFalse();
+    
+        var modelsAfter = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM car_model WHERE manufacturer_id = ?",
+                Long.class,
+                UNUSED_ID);
+    
+        assertThat(modelsAfter).isZero();
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 import ua.foxminded.carrestservice.service.manufacturer.ManufacturerService;
 
 @WebMvcTest(ManufacturerController.class)
@@ -67,6 +68,24 @@ class ManufacturerDeleteControllerWebMvcTest {
                 .andExpect(jsonPath("$.detail")
                         .value("Operation violates a database constraint"));
 
+        verify(manufacturerService).delete(TOYOTA_ID);
+    }
+
+    @Test
+    @DisplayName("delete: manufacturer with cars -> returns 409 Conflict")
+    void delete_manufacturerWithCars_returnsConflict() throws Exception {
+        var message = "Cannot delete manufacturer with existing cars: id=%d"
+                .formatted(TOYOTA_ID);
+    
+        doThrow(new EntityInUseException(message))
+                .when(manufacturerService)
+                .delete(TOYOTA_ID);
+    
+        mockMvc.perform(delete(BASE_URL + "/{id}", TOYOTA_ID))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value(message));
+    
         verify(manufacturerService).delete(TOYOTA_ID);
     }
 }

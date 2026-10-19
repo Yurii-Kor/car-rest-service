@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import ua.foxminded.carrestservice.model.CarModel;
 
 public interface CarModelRepository extends JpaRepository<CarModel, Long> {

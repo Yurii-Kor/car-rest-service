@@ -1,3 +1,4 @@
+
 package ua.foxminded.carrestservice.web.carmodel;
 
 import static org.mockito.Mockito.*;
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.service.carmodel.CarModelService;
+import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 
 @WebMvcTest(CarModelController.class)
 @ActiveProfiles("test")
@@ -51,6 +53,24 @@ class CarModelDeleteControllerWebMvcTest {
                 .andExpect(jsonPath("$.status").value(404));
 
         verify(carModelService).delete(UNKNOWN_MODEL_ID);
+    }
+
+    @Test
+    @DisplayName("delete: model with cars -> returns 409 Conflict")
+    void delete_modelWithCars_returnsConflict() throws Exception {
+        var message = "Cannot delete car model with existing cars: id=%d"
+                .formatted(COROLLA_ID);
+
+        doThrow(new EntityInUseException(message))
+                .when(carModelService)
+                .delete(COROLLA_ID);
+
+        mockMvc.perform(delete(MODELS_URL + "/{id}", COROLLA_ID))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value(message));
+
+        verify(carModelService).delete(COROLLA_ID);
     }
 
     @Test

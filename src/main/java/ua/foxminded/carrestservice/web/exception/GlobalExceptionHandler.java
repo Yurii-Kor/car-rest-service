@@ -15,6 +15,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.service.car.exception.CarManufacturerChangeNotAllowedException;
+import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -47,6 +48,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.CONFLICT, ex.getMessage());
     }
+
+    @ExceptionHandler(EntityInUseException.class)
+    public ProblemDetail handleEntityInUse(EntityInUseException ex) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
+    }
+
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(

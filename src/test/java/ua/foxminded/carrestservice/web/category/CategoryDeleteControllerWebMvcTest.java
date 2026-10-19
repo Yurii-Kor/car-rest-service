@@ -1,3 +1,4 @@
+
 package ua.foxminded.carrestservice.web.category;
 
 import static org.mockito.Mockito.*;
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.service.category.CategoryService;
+import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 
 @WebMvcTest(CategoryController.class)
 @ActiveProfiles("test")
@@ -51,6 +53,24 @@ class CategoryDeleteControllerWebMvcTest {
                 .andExpect(jsonPath("$.status").value(404));
 
         verify(categoryService).delete(UNKNOWN_ID);
+    }
+
+    @Test
+    @DisplayName("delete: category with cars -> returns 409 Conflict")
+    void delete_categoryWithCars_returnsConflict() throws Exception {
+        var message = "Cannot delete category with existing cars: id=%d"
+                .formatted(SEDAN_ID);
+
+        doThrow(new EntityInUseException(message))
+                .when(categoryService)
+                .delete(SEDAN_ID);
+
+        mockMvc.perform(delete(BASE_URL + "/{id}", SEDAN_ID))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value(message));
+
+        verify(categoryService).delete(SEDAN_ID);
     }
 
     @Test

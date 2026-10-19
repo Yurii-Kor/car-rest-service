@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -17,6 +16,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.repository.CarModelRepository;
 import ua.foxminded.carrestservice.repository.ManufacturerRepository;
+import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
 
 @SpringBootTest
@@ -66,18 +66,21 @@ class CarModelServiceDeleteTest {
 
     @Test
     @DisplayName("delete: model has cars -> rejects deletion and preserves related data")
-    void delete_modelWithCars_throwsDataIntegrityViolationException() {
+    void delete_modelWithCars_throwsEntityInUseException() {
         assertThatThrownBy(() -> carModelService.delete(COROLLA_ID))
-                .isInstanceOf(DataIntegrityViolationException.class);
-
+                .isInstanceOf(EntityInUseException.class)
+                .hasMessage(
+                        "Cannot delete car model with existing cars: id=%d"
+                                .formatted(COROLLA_ID));
+    
         assertThat(carModelRepository.existsById(COROLLA_ID)).isTrue();
         assertThat(carModelRepository.count()).isEqualTo(5);
-
+    
         var carCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM car WHERE model_id = ?",
                 Long.class,
                 COROLLA_ID);
-
+    
         assertThat(carCount).isEqualTo(1L);
     }
 }
