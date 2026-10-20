@@ -44,7 +44,7 @@ import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
         scripts = "/sql/cleanup-database.sql",
         executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
 )
-class CarQueryServiceIntegrationTest {
+class CarQueryServiceTest {
 
     private static final Pageable DEFAULT_PAGEABLE =
             PageRequest.of(0, 12, Sort.by("id"));

@@ -19,4 +19,6 @@ class CarModelControllerTestConstants {
     final String TOYOTA_NAME = "Toyota";
     final String COROLLA_NAME = "Corolla";
     final String CAMRY_NAME = "Camry";
+    final String YARIS_NAME = "Yaris";
+    final String CAMRY_UPDATED_NAME = "Camry Hybrid";
 }
