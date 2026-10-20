@@ -47,7 +47,7 @@ class ManufacturerServiceDeleteTest {
         manufacturerService.delete(UNUSED_ID);
 
         assertThat(manufacturerRepository.existsById(UNUSED_ID)).isFalse();
-        assertThat(manufacturerRepository.count()).isEqualTo(3);
+        assertThat(manufacturerRepository.count()).isEqualTo(INITIAL_MANUFACTURERS_COUNT - 1L);
     }
 
     @Test
@@ -56,7 +56,7 @@ class ManufacturerServiceDeleteTest {
         assertThatThrownBy(() -> manufacturerService.delete(UNKNOWN_ID))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        assertThat(manufacturerRepository.count()).isEqualTo(4);
+        assertThat(manufacturerRepository.count()).isEqualTo(INITIAL_MANUFACTURERS_COUNT);
     }
 
     @Test
@@ -75,7 +75,7 @@ class ManufacturerServiceDeleteTest {
                 Long.class,
                 UNUSED_ID);
     
-        assertThat(modelsBefore).isEqualTo(2L);
+        assertThat(modelsBefore).isEqualTo(MODELS_BEFORE);
     
         manufacturerService.delete(UNUSED_ID);
     

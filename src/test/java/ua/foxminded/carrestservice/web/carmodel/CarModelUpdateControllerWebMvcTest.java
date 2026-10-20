@@ -1,4 +1,3 @@
-
 package ua.foxminded.carrestservice.web.carmodel;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -20,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.service.carmodel.CarModelService;
-import ua.foxminded.carrestservice.service.carmodel.dto.CarModelRequest;
+import ua.foxminded.carrestservice.service.carmodel.dto.CarModelUpdateRequest;
 
 @WebMvcTest(CarModelController.class)
 @ActiveProfiles("test")
@@ -45,7 +44,7 @@ class CarModelUpdateControllerWebMvcTest {
 
         verify(carModelService).update(
                 COROLLA_ID,
-                new CarModelRequest("Corolla Cross"));
+                new CarModelUpdateRequest("Corolla Cross"));
     }
 
     @Test
@@ -85,7 +84,7 @@ class CarModelUpdateControllerWebMvcTest {
         doThrow(new EntityNotFoundException(
                 "Car model not found: id=%d".formatted(UNKNOWN_MODEL_ID)))
                 .when(carModelService)
-                .update(eq(UNKNOWN_MODEL_ID), any(CarModelRequest.class));
+                .update(eq(UNKNOWN_MODEL_ID), any(CarModelUpdateRequest.class));
 
         mockMvc.perform(put(MODELS_URL + "/{id}", UNKNOWN_MODEL_ID)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -97,7 +96,7 @@ class CarModelUpdateControllerWebMvcTest {
 
         verify(carModelService).update(
                 UNKNOWN_MODEL_ID,
-                new CarModelRequest(COROLLA_NAME));
+                new CarModelUpdateRequest(COROLLA_NAME));
     }
 
     @Test
@@ -106,7 +105,7 @@ class CarModelUpdateControllerWebMvcTest {
         doThrow(new EntityExistsException(
                 "Car model already exists: manufacturerId=101, name=Camry"))
                 .when(carModelService)
-                .update(eq(COROLLA_ID), any(CarModelRequest.class));
+                .update(eq(COROLLA_ID), any(CarModelUpdateRequest.class));
 
         mockMvc.perform(put(MODELS_URL + "/{id}", COROLLA_ID)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -120,6 +119,6 @@ class CarModelUpdateControllerWebMvcTest {
 
         verify(carModelService).update(
                 COROLLA_ID,
-                new CarModelRequest(CAMRY_NAME));
+                new CarModelUpdateRequest(CAMRY_NAME));
     }
 }

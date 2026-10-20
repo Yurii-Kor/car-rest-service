@@ -13,15 +13,7 @@ public class YearShortConverter implements AttributeConverter<Year, Short> {
     public Short convertToDatabaseColumn(Year year) {
         return Optional.ofNullable(year)
                 .map(Year::getValue)
-                .map(value -> {
-                    if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
-                        throw new IllegalArgumentException(
-                                "Year is out of SMALLINT range: %d"
-                                        .formatted(value));
-                    }
-
-                    return value.shortValue();
-                })
+                .map(Integer::shortValue)
                 .orElse(null);
     }
 

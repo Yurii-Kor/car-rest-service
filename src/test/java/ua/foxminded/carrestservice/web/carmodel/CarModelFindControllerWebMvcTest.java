@@ -1,4 +1,3 @@
-
 package ua.foxminded.carrestservice.web.carmodel;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -78,7 +77,8 @@ class CarModelFindControllerWebMvcTest {
                 .thenReturn(new PageImpl<>(
                         models, pageable, models.size()));
 
-        mockMvc.perform(get(MANUFACTURER_MODELS_URL, TOYOTA_ID))
+        mockMvc.perform(get(MODELS_URL)
+                .param("manufacturerId", TOYOTA_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(2))
                 .andExpect(jsonPath("$.content[0].name").value(CAMRY_NAME))
@@ -108,7 +108,8 @@ class CarModelFindControllerWebMvcTest {
         when(carModelService.findAllByManufacturerId(TOYOTA_ID, pageable))
                 .thenReturn(page);
 
-        mockMvc.perform(get(MANUFACTURER_MODELS_URL, TOYOTA_ID)
+        mockMvc.perform(get(MODELS_URL)
+                .param("manufacturerId", TOYOTA_ID.toString())
                 .param("page", "1")
                 .param("size", "2")
                 .param("sort", "name,desc"))
@@ -130,7 +131,8 @@ class CarModelFindControllerWebMvcTest {
                         carModel(CAMRY_ID, CAMRY_NAME, TOYOTA_ID, TOYOTA_NAME),
                         carModel(COROLLA_ID, COROLLA_NAME, TOYOTA_ID, TOYOTA_NAME)));
 
-        mockMvc.perform(get(MANUFACTURER_MODELS_OPTIONS_URL, TOYOTA_ID))
+        mockMvc.perform(get(MODELS_URL + "/options")
+                .param("manufacturerId", TOYOTA_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].id").value(CAMRY_ID))
@@ -153,8 +155,9 @@ class CarModelFindControllerWebMvcTest {
                         "Manufacturer not found: id=%d"
                                 .formatted(UNKNOWN_MANUFACTURER_ID)));
 
-        mockMvc.perform(get(
-                MANUFACTURER_MODELS_URL, UNKNOWN_MANUFACTURER_ID))
+        mockMvc.perform(get(MODELS_URL)
+                .param("manufacturerId",
+                        UNKNOWN_MANUFACTURER_ID.toString()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }

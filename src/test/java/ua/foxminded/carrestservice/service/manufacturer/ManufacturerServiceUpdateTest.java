@@ -42,13 +42,13 @@ class ManufacturerServiceUpdateTest {
     @Test
     @DisplayName("update: existing manufacturer -> persists new name")
     void update_existingManufacturer_updatesName() {
-        var request = new ManufacturerRequest("Toyota Motors");
+        var request = new ManufacturerRequest(TOYOTA_NAME_UPDATED);
 
         manufacturerService.update(TOYOTA_ID, request);
 
         var updated = manufacturerRepository.findById(TOYOTA_ID).orElseThrow();
 
-        assertThat(updated.getName()).isEqualTo("Toyota Motors");
+        assertThat(updated.getName()).isEqualTo(TOYOTA_NAME_UPDATED);
     }
 
     @Test

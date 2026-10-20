@@ -34,7 +34,7 @@ class CategoryCreateControllerWebMvcTest {
     @DisplayName("create: valid JSON with extra spaces -> returns 201 Created and Location header")
     void create_validRequest_returnsCreatedAndLocation() throws Exception {
         when(categoryService.create(any(CategoryRequest.class)))
-                .thenReturn(103L);
+                .thenReturn(SEDAN_ID);
 
         mockMvc.perform(post(BASE_URL)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -43,8 +43,8 @@ class CategoryCreateControllerWebMvcTest {
                         """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string(
-                        "Location", BASE_URL + "/103"))
-                .andExpect(content().string(""));
+                        "Location", BASE_URL + "/" + SEDAN_ID))
+                .andExpect(jsonPath("$.id").value(SEDAN_ID));
 
         verify(categoryService)
                 .create(new CategoryRequest("Sports Car"));

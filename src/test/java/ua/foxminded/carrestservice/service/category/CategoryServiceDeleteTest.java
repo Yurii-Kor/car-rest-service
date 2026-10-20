@@ -48,7 +48,7 @@ class CategoryServiceDeleteTest {
         categoryService.delete(HATCHBACK_ID);
 
         assertThat(categoryRepository.existsById(HATCHBACK_ID)).isFalse();
-        assertThat(categoryRepository.count()).isEqualTo(3);
+        assertThat(categoryRepository.count()).isEqualTo(INITIAL_CATEGORIES_COUNT - 1L);
         assertThat(categoryRepository.existsById(SEDAN_ID)).isTrue();
 
         var associationCount = jdbcTemplate.queryForObject(
@@ -56,7 +56,7 @@ class CategoryServiceDeleteTest {
                 Long.class,
                 SEDAN_ID);
 
-        assertThat(associationCount).isEqualTo(1L);
+        assertThat(associationCount).isEqualTo(AMOUNT_ASSOCIATIONS_IN_DB);
     }
 
     @Test
@@ -69,14 +69,14 @@ class CategoryServiceDeleteTest {
                                 .formatted(SEDAN_ID));
 
         assertThat(categoryRepository.existsById(SEDAN_ID)).isTrue();
-        assertThat(categoryRepository.count()).isEqualTo(4);
+        assertThat(categoryRepository.count()).isEqualTo(INITIAL_CATEGORIES_COUNT);
 
         var associationCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM car_category WHERE category_id = ?",
                 Long.class,
                 SEDAN_ID);
 
-        assertThat(associationCount).isEqualTo(1L);
+        assertThat(associationCount).isEqualTo(AMOUNT_ASSOCIATIONS_IN_DB);
     }
 
     @Test
@@ -85,6 +85,6 @@ class CategoryServiceDeleteTest {
         assertThatThrownBy(() -> categoryService.delete(UNKNOWN_ID))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        assertThat(categoryRepository.count()).isEqualTo(4);
+        assertThat(categoryRepository.count()).isEqualTo(INITIAL_CATEGORIES_COUNT.intValue());
     }
 }

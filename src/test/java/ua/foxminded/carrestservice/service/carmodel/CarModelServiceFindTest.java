@@ -64,8 +64,8 @@ class CarModelServiceFindTest {
                 .extracting(carModel -> carModel.getName())
                 .containsExactly(CAMRY_NAME);
 
-        assertThat(page.getTotalElements()).isEqualTo(2);
-        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.getTotalElements()).isEqualTo(AMOUNT_TOYOTA_MODELS);
+        assertThat(page.getTotalPages()).isEqualTo(EXPECTED_TOTAL_PAGES);
     }
 
     @Test

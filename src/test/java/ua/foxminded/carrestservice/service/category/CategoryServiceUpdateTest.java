@@ -45,15 +45,15 @@ class CategoryServiceUpdateTest {
     @Test
     @DisplayName("update: existing category -> persists new name")
     void update_existingCategory_updatesName() {
-        var request = new CategoryRequest("Crossover");
+        var request = new CategoryRequest(CROSSOVER_NAME);
 
         categoryService.update(HATCHBACK_ID, request);
 
         var updated = categoryRepository.findById(HATCHBACK_ID)
                 .orElseThrow();
 
-        assertThat(updated.getName()).isEqualTo("Crossover");
-        assertThat(categoryRepository.existsByName("Crossover")).isTrue();
+        assertThat(updated.getName()).isEqualTo(CROSSOVER_NAME);
+        assertThat(categoryRepository.existsByName(CROSSOVER_NAME)).isTrue();
     }
 
     @Test
@@ -89,7 +89,7 @@ class CategoryServiceUpdateTest {
     @Test
     @DisplayName("update: unknown category -> throws EntityNotFoundException")
     void update_unknownCategory_throwsEntityNotFoundException() {
-        var request = new CategoryRequest("Crossover");
+        var request = new CategoryRequest(CROSSOVER_NAME);
 
         assertThatThrownBy(() -> categoryService.update(
                 UNKNOWN_ID, request))
@@ -101,14 +101,14 @@ class CategoryServiceUpdateTest {
     @Test
     @DisplayName("update: category assigned to car -> updates name and preserves car association")
     void update_categoryWithCar_preservesAssociation() {
-        var request = new CategoryRequest("Family Sedan");
+        var request = new CategoryRequest(SEDAN_NAME_UPDATED);
 
         categoryService.update(SEDAN_ID, request);
 
         var updated = categoryRepository.findById(SEDAN_ID)
                 .orElseThrow();
 
-        assertThat(updated.getName()).isEqualTo("Family Sedan");
+        assertThat(updated.getName()).isEqualTo(SEDAN_NAME_UPDATED);
 
         var associationCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM car_category WHERE category_id = ?",

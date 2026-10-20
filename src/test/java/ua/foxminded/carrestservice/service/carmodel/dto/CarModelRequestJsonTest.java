@@ -22,7 +22,7 @@ class CarModelRequestJsonTest {
                 """
                 {"name": "   Corolla    Cross   "}
                 """,
-                CarModelRequest.class);
+                CarModelUpdateRequest.class);
 
         assertThat(request.name()).isEqualTo("Corolla Cross");
     }

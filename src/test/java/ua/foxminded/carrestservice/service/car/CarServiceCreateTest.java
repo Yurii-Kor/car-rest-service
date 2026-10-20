@@ -18,7 +18,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.repository.CarRepository;
-import ua.foxminded.carrestservice.service.car.dto.CarRequest;
+import ua.foxminded.carrestservice.service.car.dto.CarCreateRequest;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
 import ua.foxminded.carrestservice.testutil.CarTestReader;
 
@@ -51,7 +51,7 @@ class CarServiceCreateTest {
     @Test
     @DisplayName("create: valid request -> persists car and returns generated ID")
     void create_validRequest_persistsCarAndReturnsId() {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 YEAR_2023,
                 COROLLA_ID,
                 Set.of(SEDAN_ID, SUV_ID));
@@ -75,7 +75,7 @@ class CarServiceCreateTest {
     @Test
     @DisplayName("create: empty category set -> persists car without categories")
     void create_emptyCategories_persistsCarWithoutCategories() {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 YEAR_2023,
                 COROLLA_ID,
                 Set.of());
@@ -92,7 +92,7 @@ class CarServiceCreateTest {
     @Test
     @DisplayName("create: duplicate model and year -> throws EntityExistsException")
     void create_duplicateCombination_throwsEntityExistsException() {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 YEAR_2020,
                 COROLLA_ID,
                 Set.of(SEDAN_ID));
@@ -108,7 +108,7 @@ class CarServiceCreateTest {
     @Test
     @DisplayName("create: unknown model -> throws EntityNotFoundException")
     void create_unknownModel_throwsEntityNotFoundException() {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 YEAR_2023,
                 UNKNOWN_ID,
                 Set.of(SEDAN_ID));
@@ -123,7 +123,7 @@ class CarServiceCreateTest {
     @Test
     @DisplayName("create: unknown category -> throws EntityNotFoundException without persisting car")
     void create_unknownCategory_throwsEntityNotFoundException() {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 YEAR_2023,
                 COROLLA_ID,
                 Set.of(SEDAN_ID, UNKNOWN_ID));

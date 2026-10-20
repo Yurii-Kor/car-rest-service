@@ -16,7 +16,8 @@ import ua.foxminded.carrestservice.model.CarModel;
 import ua.foxminded.carrestservice.repository.CarModelRepository;
 import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.repository.ManufacturerRepository;
-import ua.foxminded.carrestservice.service.carmodel.dto.CarModelRequest;
+import ua.foxminded.carrestservice.service.carmodel.dto.CarModelCreateRequest;
+import ua.foxminded.carrestservice.service.carmodel.dto.CarModelUpdateRequest;
 import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 
 @Slf4j
@@ -30,7 +31,9 @@ public class CarModelService {
     private final ManufacturerRepository manufacturerRepository;
 
     @Transactional
-    public Long create(Long manufacturerId, CarModelRequest request) {
+    public Long create(CarModelCreateRequest request) {
+        var manufacturerId = request.manufacturerId();
+
         checkManufacturerExists(manufacturerId);
         checkNameAvailable(manufacturerId, request.name());
 
@@ -67,7 +70,7 @@ public class CarModelService {
     }
 
     @Transactional
-    public void update(Long id, CarModelRequest request) {
+    public void update(Long id, CarModelUpdateRequest request) {
         var carModel = findById(id);
 
         if (!carModel.getName().equals(request.name())) {

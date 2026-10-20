@@ -14,8 +14,14 @@ class CarModelServiceTestConstants {
     final Long CAMRY_ID = 202L;
     final Long CIVIC_ID = 203L;
     final Long UNKNOWN_MODEL_ID = 999999L;
+    
+    final Long INITIAL_CAR_MODELS_COUNT = 5L;
+    final Long AMOUNT_TOYOTA_MODELS = 2L;
+    final Integer EXPECTED_TOTAL_PAGES = 2;
 
     final String COROLLA_NAME = "Corolla";
     final String CAMRY_NAME = "Camry";
+    final String CAMRY_UPDATED = "Camry Hybrid";
     final String CIVIC_NAME = "Civic";
+    final String YARVIS_NAME = "Yaris";
 }

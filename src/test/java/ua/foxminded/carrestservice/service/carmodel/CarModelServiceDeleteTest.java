@@ -51,7 +51,7 @@ class CarModelServiceDeleteTest {
         carModelService.delete(CAMRY_ID);
 
         assertThat(carModelRepository.existsById(CAMRY_ID)).isFalse();
-        assertThat(carModelRepository.count()).isEqualTo(4);
+        assertThat(carModelRepository.count()).isEqualTo(INITIAL_CAR_MODELS_COUNT - 1L);
         assertThat(manufacturerRepository.existsById(TOYOTA_ID)).isTrue();
     }
 
@@ -61,7 +61,7 @@ class CarModelServiceDeleteTest {
         assertThatThrownBy(() -> carModelService.delete(UNKNOWN_MODEL_ID))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        assertThat(carModelRepository.count()).isEqualTo(5);
+        assertThat(carModelRepository.count()).isEqualTo(INITIAL_CAR_MODELS_COUNT);
     }
 
     @Test
@@ -74,7 +74,7 @@ class CarModelServiceDeleteTest {
                                 .formatted(COROLLA_ID));
     
         assertThat(carModelRepository.existsById(COROLLA_ID)).isTrue();
-        assertThat(carModelRepository.count()).isEqualTo(5);
+        assertThat(carModelRepository.count()).isEqualTo(INITIAL_CAR_MODELS_COUNT);
     
         var carCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM car WHERE model_id = ?",

@@ -51,7 +51,7 @@ class CarRequestValidatorTest {
             Long modelId,
             Set<Long> categoryIds) {
 
-        var request = new CarRequest(year, modelId, categoryIds);
+        var request = new CarCreateRequest(year, modelId, categoryIds);
 
         var violations = validator.validate(request);
 
@@ -96,7 +96,7 @@ class CarRequestValidatorTest {
             String expectedField,
             Class<? extends Annotation> expectedConstraint) {
 
-        var request = new CarRequest(year, modelId, categoryIds);
+        var request = new CarCreateRequest(year, modelId, categoryIds);
 
         var violations = validator.validate(request);
 

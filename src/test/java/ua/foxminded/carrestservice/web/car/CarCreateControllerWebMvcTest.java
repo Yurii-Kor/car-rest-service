@@ -26,7 +26,7 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
-import ua.foxminded.carrestservice.service.car.dto.CarRequest;
+import ua.foxminded.carrestservice.service.car.dto.CarCreateRequest;
 
 @WebMvcTest(CarController.class)
 @ActiveProfiles("test")
@@ -44,7 +44,7 @@ class CarCreateControllerWebMvcTest {
     @Test
     @DisplayName("create: valid car request -> returns 201 Created and Location header")
     void create_validRequest_returnsCreatedAndLocation() throws Exception {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 CAR_YEAR,
                 MODEL_ID,
                 Set.of(SEDAN_ID, SUV_ID));
@@ -63,7 +63,7 @@ class CarCreateControllerWebMvcTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string(
                         "Location", BASE_URL + "/" + CAR_ID))
-                .andExpect(content().string(""));
+                .andExpect(jsonPath("$.id").value(CAR_ID));
 
         verify(carService).create(request);
     }
@@ -71,7 +71,7 @@ class CarCreateControllerWebMvcTest {
     @Test
     @DisplayName("create: empty category set -> returns 201 Created")
     void create_emptyCategories_returnsCreated() throws Exception {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 CAR_YEAR,
                 MODEL_ID,
                 Set.of());
@@ -87,7 +87,8 @@ class CarCreateControllerWebMvcTest {
                             "categoryIds": []
                         }
                         """))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(CAR_ID));
 
         verify(carService).create(request);
     }
@@ -160,7 +161,7 @@ class CarCreateControllerWebMvcTest {
     @Test
     @DisplayName("create: duplicate model and year -> returns 409 Conflict")
     void create_duplicateCombination_returnsConflict() throws Exception {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 CAR_YEAR,
                 MODEL_ID,
                 Set.of(SEDAN_ID));
@@ -189,7 +190,7 @@ class CarCreateControllerWebMvcTest {
     @Test
     @DisplayName("create: unknown model -> returns 404 Not Found")
     void create_unknownModel_returnsNotFound() throws Exception {
-        var request = new CarRequest(
+        var request = new CarCreateRequest(
                 CAR_YEAR,
                 UNKNOWN_MODEL_ID,
                 Set.of(SEDAN_ID));

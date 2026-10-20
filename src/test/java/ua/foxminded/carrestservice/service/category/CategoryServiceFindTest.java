@@ -62,8 +62,8 @@ class CategoryServiceFindTest {
                 .extracting(category -> category.getName())
                 .containsExactly(COUPE_NAME, HATCHBACK_NAME);
 
-        assertThat(page.getTotalElements()).isEqualTo(4);
-        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.getTotalElements()).isEqualTo(INITIAL_CATEGORIES_COUNT);
+        assertThat(page.getTotalPages()).isEqualTo(TOTAL_PAGES);
     }
 
     @Test

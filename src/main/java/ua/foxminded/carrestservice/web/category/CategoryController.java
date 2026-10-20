@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import ua.foxminded.carrestservice.service.category.CategoryService;
 import ua.foxminded.carrestservice.service.category.dto.CategoryRequest;
 import ua.foxminded.carrestservice.web.category.dto.CategoryResponse;
+import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
 @RestController
 @RequestMapping("/api/v1/categories")
@@ -24,14 +25,14 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
-    public ResponseEntity<Void> create(
+    public ResponseEntity<IdResponse> create(
             @Valid @RequestBody CategoryRequest request) {
 
         var id = categoryService.create(request);
 
         return ResponseEntity
                 .created(URI.create("/api/v1/categories/" + id))
-                .build();
+                .body(new IdResponse(id));
     }
 
     @GetMapping("/{id}")

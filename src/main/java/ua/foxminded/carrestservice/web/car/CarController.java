@@ -14,9 +14,10 @@ import lombok.RequiredArgsConstructor;
 import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
 import ua.foxminded.carrestservice.service.car.dto.CarDetails;
-import ua.foxminded.carrestservice.service.car.dto.CarRequest;
+import ua.foxminded.carrestservice.service.car.dto.CarCreateRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarSearchRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
+import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
 @RestController
 @RequestMapping("/api/v1/cars")
@@ -27,14 +28,14 @@ public class CarController {
     private final CarQueryService carQueryService;
 
     @PostMapping
-    public ResponseEntity<Void> create(
-            @Valid @RequestBody CarRequest request) {
+    public ResponseEntity<IdResponse> create(
+            @Valid @RequestBody CarCreateRequest request) {
 
         var id = carService.create(request);
 
         return ResponseEntity
                 .created(URI.create("/api/v1/cars/" + id))
-                .build();
+                .body(new IdResponse(id));
     }
 
     @GetMapping("/{id}")

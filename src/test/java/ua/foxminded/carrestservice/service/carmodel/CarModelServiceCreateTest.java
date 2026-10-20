@@ -1,4 +1,3 @@
-
 package ua.foxminded.carrestservice.service.carmodel;
 
 import static org.assertj.core.api.Assertions.*;
@@ -16,7 +15,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.repository.CarModelRepository;
-import ua.foxminded.carrestservice.service.carmodel.dto.CarModelRequest;
+import ua.foxminded.carrestservice.service.carmodel.dto.CarModelCreateRequest;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
 
 @SpringBootTest
@@ -42,53 +41,56 @@ class CarModelServiceCreateTest {
     @Test
     @DisplayName("create: new model -> persists entity and returns generated ID")
     void create_newModel_persistsAndReturnsId() {
-        var request = new CarModelRequest("Yaris");
+        var request = new CarModelCreateRequest(YARVIS_NAME, TOYOTA_ID);
 
-        var id = carModelService.create(TOYOTA_ID, request);
+        var id = carModelService.create(request);
 
         assertThat(id).isNotNull();
 
         var saved = carModelRepository.findById(id).orElseThrow();
 
-        assertThat(saved.getName()).isEqualTo("Yaris");
+        assertThat(saved.getName()).isEqualTo(YARVIS_NAME);
+        assertThat(saved.getManufacturer().getId()).isEqualTo(TOYOTA_ID);
+
         assertThat(carModelRepository.existsByManufacturerIdAndName(
-                TOYOTA_ID, "Yaris")).isTrue();
+                TOYOTA_ID, YARVIS_NAME)).isTrue();
     }
 
     @Test
     @DisplayName("create: model name exists under another manufacturer -> creates model successfully")
     void create_nameExistsUnderAnotherManufacturer_createsModel() {
-        var request = new CarModelRequest(CAMRY_NAME);
+        var request = new CarModelCreateRequest(CAMRY_NAME, HONDA_ID);
 
-        var id = carModelService.create(HONDA_ID, request);
+        var id = carModelService.create(request);
 
         assertThat(id).isNotNull();
         assertThat(carModelRepository.existsByManufacturerIdAndName(
                 HONDA_ID, CAMRY_NAME)).isTrue();
-        assertThat(carModelRepository.count()).isEqualTo(6);
+        assertThat(carModelRepository.count()).isEqualTo(INITIAL_CAR_MODELS_COUNT + 1L);
     }
 
     @Test
     @DisplayName("create: duplicate name within manufacturer -> throws EntityExistsException")
     void create_duplicateName_throwsEntityExistsException() {
-        var request = new CarModelRequest(COROLLA_NAME);
+        var request = new CarModelCreateRequest(
+                COROLLA_NAME, TOYOTA_ID);
 
-        assertThatThrownBy(() -> carModelService.create(TOYOTA_ID, request))
+        assertThatThrownBy(() -> carModelService.create(request))
                 .isInstanceOf(EntityExistsException.class)
                 .hasMessageContaining(COROLLA_NAME);
 
-        assertThat(carModelRepository.count()).isEqualTo(5);
+        assertThat(carModelRepository.count()).isEqualTo(INITIAL_CAR_MODELS_COUNT);
     }
 
     @Test
     @DisplayName("create: unknown manufacturer -> throws EntityNotFoundException")
     void create_unknownManufacturer_throwsEntityNotFoundException() {
-        var request = new CarModelRequest("Yaris");
+        var request = new CarModelCreateRequest(
+                YARVIS_NAME, UNKNOWN_MANUFACTURER_ID);
 
-        assertThatThrownBy(() -> carModelService.create(
-                UNKNOWN_MANUFACTURER_ID, request))
+        assertThatThrownBy(() -> carModelService.create(request))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        assertThat(carModelRepository.count()).isEqualTo(5);
+        assertThat(carModelRepository.count()).isEqualTo(INITIAL_CAR_MODELS_COUNT);
     }
 }

@@ -8,7 +8,7 @@ import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 import ua.foxminded.carrestservice.common.validation.MinYear;
 
-public record CarRequest(
+public record CarCreateRequest(
 
         @NotNull
         @PastOrPresent

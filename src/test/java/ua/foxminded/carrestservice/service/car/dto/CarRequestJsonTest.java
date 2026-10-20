@@ -28,7 +28,7 @@ class CarRequestJsonTest {
                     "categoryIds": [20, 21]
                 }
                 """,
-                CarRequest.class);
+                CarCreateRequest.class);
 
         assertThat(request.year()).isEqualTo(Year.of(2020));
         assertThat(request.modelId()).isEqualTo(10L);
@@ -47,7 +47,7 @@ class CarRequestJsonTest {
                     "categoryIds": []
                 }
                 """,
-                CarRequest.class);
+                CarCreateRequest.class);
 
         assertThat(request.year()).isEqualTo(Year.of(2020));
         assertThat(request.categoryIds()).isEmpty();
@@ -64,7 +64,7 @@ class CarRequestJsonTest {
                     "categoryIds": null
                 }
                 """,
-                CarRequest.class);
+                CarCreateRequest.class);
 
         assertThat(request.year()).isNull();
         assertThat(request.modelId()).isNull();

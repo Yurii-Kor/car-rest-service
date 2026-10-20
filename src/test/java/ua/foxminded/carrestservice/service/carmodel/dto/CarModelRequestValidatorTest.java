@@ -39,7 +39,7 @@ class CarModelRequestValidatorTest {
     @MethodSource("validCases")
     @DisplayName("validate: valid car model name -> produces no constraint violations")
     void validate_validName_noViolations(String scenario, String name) {
-        var request = new CarModelRequest(name);
+        var request = new CarModelUpdateRequest(name);
 
         var violations = validator.validate(request);
 
@@ -62,7 +62,7 @@ class CarModelRequestValidatorTest {
             String name,
             Class<? extends Annotation> expectedConstraint) {
 
-        var request = new CarModelRequest(name);
+        var request = new CarModelUpdateRequest(name);
 
         var violations = validator.validate(request);
 

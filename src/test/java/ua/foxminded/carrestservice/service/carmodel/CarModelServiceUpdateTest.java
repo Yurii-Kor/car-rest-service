@@ -16,7 +16,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import ua.foxminded.carrestservice.repository.CarModelRepository;
-import ua.foxminded.carrestservice.service.carmodel.dto.CarModelRequest;
+import ua.foxminded.carrestservice.service.carmodel.dto.CarModelUpdateRequest;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
 
 @SpringBootTest
@@ -42,13 +42,13 @@ class CarModelServiceUpdateTest {
     @Test
     @DisplayName("update: existing model -> persists new name under same manufacturer")
     void update_existingModel_updatesName() {
-        var request = new CarModelRequest("Camry Hybrid");
+        var request = new CarModelUpdateRequest(CAMRY_UPDATED);
 
         carModelService.update(CAMRY_ID, request);
 
         var updated = carModelRepository.findById(CAMRY_ID).orElseThrow();
 
-        assertThat(updated.getName()).isEqualTo("Camry Hybrid");
+        assertThat(updated.getName()).isEqualTo(CAMRY_UPDATED);
         assertThat(carModelRepository.existsByManufacturerIdAndName(
                 TOYOTA_ID, "Camry Hybrid")).isTrue();
     }
@@ -56,7 +56,7 @@ class CarModelServiceUpdateTest {
     @Test
     @DisplayName("update: unchanged name -> preserves existing model")
     void update_sameName_keepsModelUnchanged() {
-        var request = new CarModelRequest(CAMRY_NAME);
+        var request = new CarModelUpdateRequest(CAMRY_NAME);
 
         carModelService.update(CAMRY_ID, request);
 
@@ -68,7 +68,7 @@ class CarModelServiceUpdateTest {
     @Test
     @DisplayName("update: duplicate name within manufacturer -> throws EntityExistsException and preserves original name")
     void update_duplicateName_throwsEntityExistsException() {
-        var request = new CarModelRequest(COROLLA_NAME);
+        var request = new CarModelUpdateRequest(COROLLA_NAME);
 
         assertThatThrownBy(() -> carModelService.update(CAMRY_ID, request))
                 .isInstanceOf(EntityExistsException.class)
@@ -82,7 +82,7 @@ class CarModelServiceUpdateTest {
     @Test
     @DisplayName("update: name exists under another manufacturer -> updates model successfully")
     void update_nameExistsUnderAnotherManufacturer_updatesModel() {
-        var request = new CarModelRequest(CIVIC_NAME);
+        var request = new CarModelUpdateRequest(CIVIC_NAME);
 
         carModelService.update(CAMRY_ID, request);
 
@@ -96,7 +96,7 @@ class CarModelServiceUpdateTest {
     @Test
     @DisplayName("update: unknown model -> throws EntityNotFoundException")
     void update_unknownModel_throwsEntityNotFoundException() {
-        var request = new CarModelRequest("Yaris");
+        var request = new CarModelUpdateRequest(YARVIS_NAME);
 
         assertThatThrownBy(() -> carModelService.update(
                 UNKNOWN_MODEL_ID, request))

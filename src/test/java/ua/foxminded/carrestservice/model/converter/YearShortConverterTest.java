@@ -37,24 +37,6 @@ class YearShortConverterTest {
         assertThat(result).isNull();
     }
 
-    @ParameterizedTest(name = "[{index}] year={0}")
-    @ValueSource(ints = {
-            Short.MIN_VALUE - 1,
-            Short.MAX_VALUE + 1
-    })
-    @DisplayName("convertToDatabaseColumn: year outside SMALLINT range -> throws IllegalArgumentException")
-    void convertToDatabaseColumn_outOfRange_throwsIllegalArgumentException(
-            int value) {
-
-        var year = Year.of(value);
-
-        assertThatThrownBy(() -> converter.convertToDatabaseColumn(year))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage(
-                        "Year is out of SMALLINT range: %d"
-                                .formatted(value));
-    }
-
     @ParameterizedTest(name = "[{index}] value={0}")
     @ValueSource(shorts = {
             Short.MIN_VALUE,

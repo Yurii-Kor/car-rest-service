@@ -40,7 +40,7 @@ class ManufacturerServiceCreateTest {
     @Test
     @DisplayName("create: new manufacturer -> persists entity and returns generated ID")
     void create_newManufacturer_persistsAndReturnsId() {
-        var request = new ManufacturerRequest("Honda");
+        var request = new ManufacturerRequest(HONDA_NAME);
 
         var id = manufacturerService.create(request);
 
@@ -48,7 +48,7 @@ class ManufacturerServiceCreateTest {
 
         var saved = manufacturerRepository.findById(id).orElseThrow();
 
-        assertThat(saved.getName()).isEqualTo("Honda");
+        assertThat(saved.getName()).isEqualTo(HONDA_NAME);
     }
 
     @Test

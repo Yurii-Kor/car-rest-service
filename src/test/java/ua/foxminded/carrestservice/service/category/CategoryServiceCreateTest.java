@@ -40,7 +40,7 @@ class CategoryServiceCreateTest {
     @Test
     @DisplayName("create: new category -> persists entity and returns generated ID")
     void create_newCategory_persistsAndReturnsId() {
-        var request = new CategoryRequest("Crossover");
+        var request = new CategoryRequest(CROSSOVER_NAME);
 
         var id = categoryService.create(request);
 
@@ -48,9 +48,9 @@ class CategoryServiceCreateTest {
 
         var saved = categoryRepository.findById(id).orElseThrow();
 
-        assertThat(saved.getName()).isEqualTo("Crossover");
-        assertThat(categoryRepository.existsByName("Crossover")).isTrue();
-        assertThat(categoryRepository.count()).isEqualTo(5);
+        assertThat(saved.getName()).isEqualTo(CROSSOVER_NAME);
+        assertThat(categoryRepository.existsByName(CROSSOVER_NAME)).isTrue();
+        assertThat(categoryRepository.count()).isEqualTo(INITIAL_CATEGORIES_COUNT.intValue() + 1);
     }
 
     @Test

@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ua.foxminded.carrestservice.service.manufacturer.ManufacturerService;
 import ua.foxminded.carrestservice.service.manufacturer.dto.ManufacturerRequest;
+import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 import ua.foxminded.carrestservice.web.manufacturer.dto.ManufacturerResponse;
 
 @RestController
@@ -24,14 +25,14 @@ public class ManufacturerController {
     private final ManufacturerService manufacturerService;
 
     @PostMapping
-    public ResponseEntity<Void> create(
+    public ResponseEntity<IdResponse> create(
             @Valid @RequestBody ManufacturerRequest request) {
 
         var id = manufacturerService.create(request);
 
         return ResponseEntity
                 .created(URI.create("/api/v1/manufacturers/" + id))
-                .build();
+                .body(new IdResponse(id));
     }
 
     @GetMapping("/{id}")

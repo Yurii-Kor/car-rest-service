@@ -14,12 +14,11 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ua.foxminded.carrestservice.model.Car;
-import ua.foxminded.carrestservice.model.CarModel;
 import ua.foxminded.carrestservice.model.Category;
 import ua.foxminded.carrestservice.repository.CarModelRepository;
 import ua.foxminded.carrestservice.repository.CarRepository;
 import ua.foxminded.carrestservice.repository.CategoryRepository;
-import ua.foxminded.carrestservice.service.car.dto.CarRequest;
+import ua.foxminded.carrestservice.service.car.dto.CarCreateRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
 import ua.foxminded.carrestservice.service.car.exception.CarManufacturerChangeNotAllowedException;
 
@@ -33,7 +32,7 @@ public class CarService {
     private final CarModelRepository carModelRepository;
     private final CategoryRepository categoryRepository;
 
-    public Long create(CarRequest request) {
+    public Long create(CarCreateRequest request) {
         checkModelExists(request.modelId());
         checkCombinationAvailable(request.modelId(), request.year());
 
@@ -50,34 +49,19 @@ public class CarService {
         return car.getId();
     }
 
-    public void update(Long id, CarUpdateRequest request) {
+    public void update(Long id, CarUpdateRequest patch) {
         var car = findEntityById(id);
 
-        var yearUpdate = getYear(car, request);
-        var modelUpdate = getModel(car, request);
-
-        if (yearUpdate.isPresent() || modelUpdate.isPresent()) {
-            var targetYear = yearUpdate.orElseGet(car::getYear);
-
-            var targetModelId = modelUpdate
-                    .map(CarModel::getId)
-                    .orElseGet(() -> car.getModel().getId());
-
-            checkCombinationAvailable(targetModelId, targetYear);
-        }
-
-        var categoriesUpdate = getCategories(car, request);
-
-        if (yearUpdate.isEmpty()
-                && modelUpdate.isEmpty()
-                && categoriesUpdate.isEmpty()) {
+        if (!hasChanges(car, patch)) {
             return;
         }
 
-        yearUpdate.ifPresent(car::setYear);
-        modelUpdate.ifPresent(car::setModel);
-        categoriesUpdate.ifPresent(categories ->
-                updateCategories(car, categories));
+        validateModelPatch(car, patch);
+        validateCombinationPatch(car, patch);
+
+        applyCategoriesPatch(car, patch);
+        applyYearPatch(car, patch);
+        applyModelPatch(car, patch);
 
         log.info("Car updated: id={}", id);
     }
@@ -94,33 +78,57 @@ public class CarService {
                         "Car not found: id=%d".formatted(id)));
     }
 
-    private Optional<Year> getYear(Car car, CarUpdateRequest request) {
-        return Optional.ofNullable(request.year())
-                .filter(year -> !year.equals(car.getYear()));
+    private boolean hasChanges(Car car, CarUpdateRequest patch) {
+        return isYearChanged(car, patch.year())
+                || isModelChanged(car, patch.modelId())
+                || isCategoriesChanged(car, patch.categoryIds());
     }
 
-    private Optional<CarModel> getModel(
-            Car car, CarUpdateRequest request) {
-
-        return Optional.ofNullable(request.modelId())
-                .filter(modelId -> !modelId.equals(car.getModel().getId()))
-                .map(modelId -> resolveModelForUpdate(car, modelId));
+    private boolean isYearChanged(Car car, Year year) {
+        return Optional.ofNullable(year)
+                .filter(value -> !value.equals(car.getYear()))
+                .isPresent();
     }
 
-    private Optional<Set<Category>> getCategories(
-            Car car, CarUpdateRequest request) {
+    private boolean isModelChanged(Car car, Long modelId) {
+        return Optional.ofNullable(modelId)
+                .filter(id -> !id.equals(car.getModel().getId()))
+                .isPresent();
+    }
 
-        return Optional.ofNullable(request.categoryIds())
+    private boolean isCategoriesChanged(
+            Car car, Set<Long> categoryIds) {
+
+        return Optional.ofNullable(categoryIds)
                 .filter(ids -> !ids.equals(currentCategoryIds(car)))
-                .map(this::resolveCategories);
+                .isPresent();
     }
 
-    private void updateCategories(Car car, Set<Category> categories) {
-        car.getCategories().clear();
-        car.getCategories().addAll(categories);
+    private void validateModelPatch(Car car, CarUpdateRequest patch) {
+        Optional.ofNullable(patch.modelId())
+                .filter(modelId -> isModelChanged(car, modelId))
+                .ifPresent(modelId ->
+                        checkManufacturerChangeAllowed(car, modelId));
     }
 
-    private CarModel resolveModelForUpdate(Car car, Long modelId) {
+    private void validateCombinationPatch(
+            Car car, CarUpdateRequest patch) {
+
+        if (!isYearChanged(car, patch.year())
+                && !isModelChanged(car, patch.modelId())) {
+            return;
+        }
+
+        var targetYear = Optional.ofNullable(patch.year())
+                .orElseGet(car::getYear);
+
+        var targetModelId = Optional.ofNullable(patch.modelId())
+                .orElseGet(() -> car.getModel().getId());
+
+        checkCombinationAvailable(targetModelId, targetYear);
+    }
+
+    private void checkManufacturerChangeAllowed(Car car, Long modelId) {
         var requestedManufacturerId = carModelRepository
                 .findManufacturerIdById(modelId)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -136,8 +144,32 @@ public class CarService {
                     currentManufacturerId,
                     requestedManufacturerId);
         }
+    }
 
-        return carModelRepository.getReferenceById(modelId);
+    private void applyYearPatch(Car car, CarUpdateRequest patch) {
+        Optional.ofNullable(patch.year())
+                .filter(year -> isYearChanged(car, year))
+                .ifPresent(car::setYear);
+    }
+
+    private void applyModelPatch(Car car, CarUpdateRequest patch) {
+        Optional.ofNullable(patch.modelId())
+                .filter(modelId -> isModelChanged(car, modelId))
+                .map(carModelRepository::getReferenceById)
+                .ifPresent(car::setModel);
+    }
+
+    private void applyCategoriesPatch(Car car, CarUpdateRequest patch) {
+        Optional.ofNullable(patch.categoryIds())
+                .filter(ids -> isCategoriesChanged(car, ids))
+                .map(this::resolveCategories)
+                .ifPresent(categories ->
+                        updateCategories(car, categories));
+    }
+
+    private void updateCategories(Car car, Set<Category> categories) {
+        car.getCategories().clear();
+        car.getCategories().addAll(categories);
     }
 
     private void checkModelExists(Long modelId) {

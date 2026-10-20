@@ -63,8 +63,8 @@ class ManufacturerServiceFindTest {
                 .extracting(manufacturer -> manufacturer.getName())
                 .containsExactly(BMW_NAME, PROTOTYPE_NAME);
 
-        assertThat(page.getTotalElements()).isEqualTo(4);
-        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.getTotalElements()).isEqualTo(INITIAL_MANUFACTURERS_COUNT);
+        assertThat(page.getTotalPages()).isEqualTo(TOTAL_PAGES);
     }
 
     @Test

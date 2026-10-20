@@ -1,3 +1,4 @@
+
 package ua.foxminded.carrestservice.web.carmodel;
 
 import java.net.URI;
@@ -13,36 +14,37 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ua.foxminded.carrestservice.service.carmodel.CarModelService;
-import ua.foxminded.carrestservice.service.carmodel.dto.CarModelRequest;
+import ua.foxminded.carrestservice.service.carmodel.dto.CarModelCreateRequest;
+import ua.foxminded.carrestservice.service.carmodel.dto.CarModelUpdateRequest;
 import ua.foxminded.carrestservice.web.carmodel.dto.CarModelResponse;
+import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/models")
 @RequiredArgsConstructor
 public class CarModelController {
 
     private final CarModelService carModelService;
 
-    @PostMapping("/manufacturers/{manufacturerId}/models")
-    public ResponseEntity<Void> create(
-            @PathVariable Long manufacturerId,
-            @Valid @RequestBody CarModelRequest request) {
+    @PostMapping
+    public ResponseEntity<IdResponse> create(
+            @Valid @RequestBody CarModelCreateRequest request) {
 
-        var id = carModelService.create(manufacturerId, request);
+        var id = carModelService.create(request);
 
         return ResponseEntity
                 .created(URI.create("/api/v1/models/" + id))
-                .build();
+                .body(new IdResponse(id));
     }
 
-    @GetMapping("/models/{id}")
+    @GetMapping("/{id}")
     public CarModelResponse findById(@PathVariable Long id) {
         return new CarModelResponse(carModelService.findById(id));
     }
 
-    @GetMapping("/manufacturers/{manufacturerId}/models")
+    @GetMapping
     public Page<CarModelResponse> findAllByManufacturerId(
-            @PathVariable Long manufacturerId,
+            @RequestParam Long manufacturerId,
             @PageableDefault(size = 12, sort = "name") Pageable pageable) {
 
         return carModelService.findAllByManufacturerId(
@@ -50,9 +52,9 @@ public class CarModelController {
                 .map(CarModelResponse::new);
     }
 
-    @GetMapping("/manufacturers/{manufacturerId}/models/options")
+    @GetMapping("/options")
     public List<CarModelResponse> findAllForSelection(
-            @PathVariable Long manufacturerId) {
+            @RequestParam Long manufacturerId) {
 
         return carModelService.findAllForSelection(manufacturerId)
                 .stream()
@@ -60,16 +62,16 @@ public class CarModelController {
                 .toList();
     }
 
-    @PutMapping("/models/{id}")
+    @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void update(
             @PathVariable Long id,
-            @Valid @RequestBody CarModelRequest request) {
+            @Valid @RequestBody CarModelUpdateRequest request) {
 
         carModelService.update(id, request);
     }
 
-    @DeleteMapping("/models/{id}")
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         carModelService.delete(id);

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import ua.foxminded.carrestservice.common.normalization.NormalizeSpaces;
 
-public record CarModelRequest(
+public record CarModelUpdateRequest(
 
         @NormalizeSpaces
         @NotBlank

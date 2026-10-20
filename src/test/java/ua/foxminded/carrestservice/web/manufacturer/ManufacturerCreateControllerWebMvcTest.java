@@ -34,7 +34,7 @@ class ManufacturerCreateControllerWebMvcTest {
     @DisplayName("create: valid JSON with extra spaces -> returns 201 Created and Location header")
     void create_validRequest_returnsCreatedAndLocation() throws Exception {
         when(manufacturerService.create(any(ManufacturerRequest.class)))
-                .thenReturn(65L);
+                .thenReturn(TOYOTA_ID);
 
         mockMvc.perform(post(BASE_URL)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -43,8 +43,8 @@ class ManufacturerCreateControllerWebMvcTest {
                         """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string(
-                        "Location", BASE_URL + "/65"))
-                .andExpect(content().string(""));
+                        "Location", BASE_URL + "/" + TOYOTA_ID))
+                .andExpect(jsonPath("$.id").value(TOYOTA_ID));
 
         verify(manufacturerService)
                 .create(new ManufacturerRequest("Land Rover"));
