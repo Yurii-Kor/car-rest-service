@@ -238,4 +238,13 @@ class CarSecurityWebMvcTest {
         verify(carService).delete(CAR_ID);
         verifyNoInteractions(carQueryService);
     }
+    
+    @Test
+    @DisplayName("delete: missing JWT -> returns 401 without calling service")
+    void delete_withoutToken_returnsUnauthorized() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/{id}", CAR_ID))
+                .andExpect(status().isUnauthorized());
+    
+        verifyNoInteractions(carService, carQueryService);
+    }
 }

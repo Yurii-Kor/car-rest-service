@@ -313,36 +313,6 @@ class CarControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("delete: missing JWT -> returns 401 and preserves car associations")
-    void delete_withoutToken_preservesCarAndAssociations() throws Exception {
-        var initialCount = carRepository.count();
-
-        var initialAssociationCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM car_category WHERE car_id = ?",
-                Long.class,
-                DB_EXISTING_CAR_ID);
-
-        assertThat(initialAssociationCount).isPositive();
-
-        mockMvc.perform(delete(BASE_URL + "/{id}", DB_EXISTING_CAR_ID))
-                .andExpect(status().isUnauthorized());
-
-        assertThat(carRepository.existsById(DB_EXISTING_CAR_ID))
-                .isTrue();
-
-        assertThat(carRepository.count())
-                .isEqualTo(initialCount);
-
-        var associationCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM car_category WHERE car_id = ?",
-                Long.class,
-                DB_EXISTING_CAR_ID);
-
-        assertThat(associationCount)
-                .isEqualTo(initialAssociationCount);
-    }
-
-    @Test
     @DisplayName("delete: existing car -> removes car and category associations")
     void delete_existingCar_removesCarAndAssociations() throws Exception {
         var initialCount = carRepository.count();
