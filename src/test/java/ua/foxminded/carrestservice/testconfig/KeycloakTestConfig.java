@@ -11,22 +11,22 @@ public class KeycloakTestConfig {
 
     private static final String REALM = "car-service-test";
 
-    @Bean
-    KeycloakContainer keycloakContainer() {
-        return new KeycloakContainer(
-                "quay.io/keycloak/keycloak:26.8.0")
-                .withRealmImportFile(
-                        "/keycloak/car-service-test-realm.json");
+    private static final KeycloakContainer KEYCLOAK_CONTAINER =
+            new KeycloakContainer(
+                    "quay.io/keycloak/keycloak:26.8.0")
+                    .withRealmImportFile(
+                            "/keycloak/car-service-test-realm.json");
+
+    static {
+        KEYCLOAK_CONTAINER.start();
     }
 
     @Bean
-    DynamicPropertyRegistrar keycloakProperties(
-            KeycloakContainer keycloakContainer) {
-
+    DynamicPropertyRegistrar keycloakProperties() {
         return registry -> {
             registry.add(
                     "spring.security.oauth2.resourceserver.jwt.issuer-uri",
-                    () -> keycloakContainer.getIssuerUrl(REALM));
+                    () -> KEYCLOAK_CONTAINER.getIssuerUrl(REALM));
 
             registry.add(
                     "spring.security.oauth2.resourceserver.jwt.audiences[0]",
@@ -35,9 +35,7 @@ public class KeycloakTestConfig {
     }
 
     @Bean
-    KeycloakTestTokens keycloakTestTokens(
-            KeycloakContainer keycloakContainer) {
-
-        return new KeycloakTestTokens(keycloakContainer);
+    KeycloakTestTokens keycloakTestTokens() {
+        return new KeycloakTestTokens(KEYCLOAK_CONTAINER);
     }
 }
