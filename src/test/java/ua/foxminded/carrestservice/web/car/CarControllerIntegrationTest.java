@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -23,6 +24,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import tools.jackson.databind.json.JsonMapper;
 import ua.foxminded.carrestservice.repository.CarRepository;
+import ua.foxminded.carrestservice.testconfig.KeycloakTestConfig;
+import ua.foxminded.carrestservice.testconfig.KeycloakTestTokens;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
 import ua.foxminded.carrestservice.testutil.CarTestReader;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
@@ -32,6 +35,7 @@ import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 @ActiveProfiles("test")
 @Import({
         PostgreSQLTestConfig.class,
+        KeycloakTestConfig.class,
         CarTestReader.class
 })
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
@@ -60,12 +64,17 @@ class CarControllerIntegrationTest {
     @Autowired
     private JsonMapper jsonMapper;
 
+    @Autowired
+    private KeycloakTestTokens tokens;
+
     @Test
     @DisplayName("create: valid request -> persists car with category associations")
     void create_validRequest_persistsCarAndReturnsId() throws Exception {
         var initialCount = carRepository.count();
 
         var result = mockMvc.perform(post(BASE_URL)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.carEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -252,6 +261,8 @@ class CarControllerIntegrationTest {
     @DisplayName("update: valid PATCH -> persists year, model and category changes")
     void update_validRequest_persistsChanges() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/{id}", DB_EXISTING_CAR_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.carEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -284,6 +295,8 @@ class CarControllerIntegrationTest {
     @DisplayName("update: partial PATCH -> changes year and preserves other fields")
     void update_yearOnly_preservesOtherFields() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/{id}", DB_EXISTING_CAR_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.carEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"year": 2024}
@@ -300,11 +313,43 @@ class CarControllerIntegrationTest {
     }
 
     @Test
+    @DisplayName("delete: missing JWT -> returns 401 and preserves car associations")
+    void delete_withoutToken_preservesCarAndAssociations() throws Exception {
+        var initialCount = carRepository.count();
+
+        var initialAssociationCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM car_category WHERE car_id = ?",
+                Long.class,
+                DB_EXISTING_CAR_ID);
+
+        assertThat(initialAssociationCount).isPositive();
+
+        mockMvc.perform(delete(BASE_URL + "/{id}", DB_EXISTING_CAR_ID))
+                .andExpect(status().isUnauthorized());
+
+        assertThat(carRepository.existsById(DB_EXISTING_CAR_ID))
+                .isTrue();
+
+        assertThat(carRepository.count())
+                .isEqualTo(initialCount);
+
+        var associationCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM car_category WHERE car_id = ?",
+                Long.class,
+                DB_EXISTING_CAR_ID);
+
+        assertThat(associationCount)
+                .isEqualTo(initialAssociationCount);
+    }
+
+    @Test
     @DisplayName("delete: existing car -> removes car and category associations")
     void delete_existingCar_removesCarAndAssociations() throws Exception {
         var initialCount = carRepository.count();
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", DB_EXISTING_CAR_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", DB_EXISTING_CAR_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.carEditorToken()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 

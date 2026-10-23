@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -22,17 +23,23 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import ua.foxminded.carrestservice.security.SecurityConfig;
 import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
 import ua.foxminded.carrestservice.service.car.dto.CarCreateRequest;
 
 @WebMvcTest(CarController.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class CarCreateRequestValidationWebMvcTest {
 
     @Autowired
@@ -44,6 +51,9 @@ class CarCreateRequestValidationWebMvcTest {
     @MockitoBean
     private CarQueryService carQueryService;
 
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
+
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("validCases")
     @DisplayName("create: valid year boundaries -> returns 201 Created")
@@ -54,6 +64,7 @@ class CarCreateRequestValidationWebMvcTest {
                 .thenReturn(CAR_ID);
 
         mockMvc.perform(post(BASE_URL)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson(
                         Integer.toString(year.getValue()),
@@ -86,6 +97,7 @@ class CarCreateRequestValidationWebMvcTest {
             String expectedMessage) throws Exception {
 
         mockMvc.perform(post(BASE_URL)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isBadRequest())
@@ -186,6 +198,7 @@ class CarCreateRequestValidationWebMvcTest {
     @DisplayName("create: all fields null -> returns validation errors for all fields")
     void create_allFieldsNull_returnsBadRequest() throws Exception {
         mockMvc.perform(post(BASE_URL)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson("null", "null", "null")))
                 .andExpect(status().isBadRequest())
@@ -196,6 +209,11 @@ class CarCreateRequestValidationWebMvcTest {
                         containsString("categoryIds:"))));
 
         verifyNoInteractions(carService);
+    }
+
+    private static RequestPostProcessor carEditor() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("SCOPE_cars:write"));
     }
 
     private static String requestJson(

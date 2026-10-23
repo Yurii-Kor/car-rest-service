@@ -1,6 +1,7 @@
 package ua.foxminded.carrestservice.web.car;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -12,14 +13,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.security.SecurityConfig;
 import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
 import ua.foxminded.carrestservice.service.car.dto.CarCreateRequest;
@@ -28,6 +34,7 @@ import ua.foxminded.carrestservice.service.car.exception.CarManufacturerChangeNo
 
 @WebMvcTest(CarController.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class CarControllerWebMvcTest {
 
     @Autowired
@@ -38,6 +45,9 @@ class CarControllerWebMvcTest {
 
     @MockitoBean
     private CarQueryService carQueryService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @Test
     @DisplayName("create: empty category set -> returns 201 Created")
@@ -50,6 +60,7 @@ class CarControllerWebMvcTest {
         when(carService.create(request)).thenReturn(CAR_ID);
 
         mockMvc.perform(post(BASE_URL)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -79,6 +90,7 @@ class CarControllerWebMvcTest {
                 .thenThrow(new EntityExistsException(message));
 
         mockMvc.perform(post(BASE_URL)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -112,6 +124,7 @@ class CarControllerWebMvcTest {
                 .thenThrow(new EntityNotFoundException(message));
 
         mockMvc.perform(post(BASE_URL)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -133,6 +146,7 @@ class CarControllerWebMvcTest {
     @DisplayName("update: model only -> passes partial request to service")
     void update_modelOnly_returnsNoContent() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"modelId": %d}
@@ -148,6 +162,7 @@ class CarControllerWebMvcTest {
     @DisplayName("update: empty category array -> passes empty set to service")
     void update_emptyCategories_passesEmptySet() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"categoryIds": []}
@@ -163,6 +178,7 @@ class CarControllerWebMvcTest {
     @DisplayName("update: category IDs provided -> passes replacement set to service")
     void update_categoriesOnly_passesReplacementSet() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"categoryIds": [%d, %d]}
@@ -179,6 +195,7 @@ class CarControllerWebMvcTest {
     @DisplayName("update: empty JSON object -> passes all-null request to service")
     void update_emptyRequest_passesNullFields() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
                 .andExpect(status().isNoContent());
@@ -201,6 +218,7 @@ class CarControllerWebMvcTest {
                 .update(UNKNOWN_CAR_ID, request);
 
         mockMvc.perform(patch(BASE_URL + "/{id}", UNKNOWN_CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"year": %d}
@@ -224,6 +242,7 @@ class CarControllerWebMvcTest {
                 .update(CAR_ID, request);
 
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"year": %d}
@@ -254,6 +273,7 @@ class CarControllerWebMvcTest {
                 .update(CAR_ID, request);
 
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"modelId": %d}
@@ -273,7 +293,8 @@ class CarControllerWebMvcTest {
                 .when(carService)
                 .delete(UNKNOWN_CAR_ID);
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", UNKNOWN_CAR_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", UNKNOWN_CAR_ID)
+                .with(carEditor()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
 
@@ -290,12 +311,18 @@ class CarControllerWebMvcTest {
                 .when(carService)
                 .delete(CAR_ID);
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", CAR_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail")
                         .value("Operation violates a database constraint"));
 
         verify(carService).delete(CAR_ID);
+    }
+
+    private static RequestPostProcessor carEditor() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("SCOPE_cars:write"));
     }
 }

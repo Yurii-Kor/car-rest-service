@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -18,17 +19,23 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import ua.foxminded.carrestservice.security.SecurityConfig;
 import ua.foxminded.carrestservice.service.manufacturer.ManufacturerService;
 import ua.foxminded.carrestservice.service.manufacturer.dto.ManufacturerRequest;
 
 @WebMvcTest(ManufacturerController.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class ManufacturerRequestValidationWebMvcTest {
 
     @Autowired
@@ -36,6 +43,9 @@ class ManufacturerRequestValidationWebMvcTest {
 
     @MockitoBean
     private ManufacturerService manufacturerService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("validCases")
@@ -49,6 +59,7 @@ class ManufacturerRequestValidationWebMvcTest {
                 .thenReturn(TOYOTA_ID);
 
         mockMvc.perform(post(BASE_URL)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isCreated())
@@ -69,6 +80,7 @@ class ManufacturerRequestValidationWebMvcTest {
             String expectedName) throws Exception {
 
         mockMvc.perform(put(BASE_URL + "/{id}", TOYOTA_ID)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isNoContent())
@@ -85,12 +97,12 @@ class ManufacturerRequestValidationWebMvcTest {
                         "one character",
                         requestJson("\"A\""),
                         "A"),
-    
+
                 Arguments.of(
                         "maximum length of 255",
                         requestJson("\"" + "A".repeat(255) + "\""),
                         "A".repeat(255)),
-    
+
                 Arguments.of(
                         "tabs and spaces -> normalized name",
                         requestJson("\"  %s\\t  Motors  \""
@@ -164,6 +176,7 @@ class ManufacturerRequestValidationWebMvcTest {
             String expectedMessage) throws Exception {
 
         mockMvc.perform(request
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isBadRequest())
@@ -173,6 +186,11 @@ class ManufacturerRequestValidationWebMvcTest {
                 .andExpect(jsonPath("$.errors", hasItem(allOf(
                         containsString("name"),
                         containsString(expectedMessage)))));
+    }
+
+    private static RequestPostProcessor catalogEditor() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("SCOPE_catalog:write"));
     }
 
     private static String requestJson(String name) {

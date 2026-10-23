@@ -2,10 +2,13 @@ spring:
   application:
     name: car-rest-service
 
+  config:
+    import: "optional:file:./.env[.properties]"
+
   datasource:
-    url: jdbc:postgresql://localhost:5433/car_rest_db
-    username: car_rest
-    password: car_rest
+    url: jdbc:postgresql://localhost:5433/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
 
   jpa:
     open-in-view: false
@@ -16,6 +19,14 @@ spring:
     enabled: true
     locations:
       - classpath:db/migration
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+          audiences:
+            - car-rest-api
 
 logging:
   level:

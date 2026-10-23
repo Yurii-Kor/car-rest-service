@@ -2,6 +2,7 @@ package ua.foxminded.carrestservice.web.carmodel;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -11,14 +12,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.security.SecurityConfig;
 import ua.foxminded.carrestservice.service.carmodel.CarModelService;
 import ua.foxminded.carrestservice.service.carmodel.dto.CarModelCreateRequest;
 import ua.foxminded.carrestservice.service.carmodel.dto.CarModelUpdateRequest;
@@ -26,6 +32,7 @@ import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 
 @WebMvcTest(CarModelController.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class CarModelControllerWebMvcTest {
 
     @Autowired
@@ -33,6 +40,9 @@ class CarModelControllerWebMvcTest {
 
     @MockitoBean
     private CarModelService carModelService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @Test
     @DisplayName("create: duplicate model name -> returns 409 Conflict with error details")
@@ -44,6 +54,7 @@ class CarModelControllerWebMvcTest {
                 .thenThrow(new EntityExistsException(message));
 
         mockMvc.perform(post(MODELS_URL)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -68,6 +79,7 @@ class CarModelControllerWebMvcTest {
                                 .formatted(UNKNOWN_MANUFACTURER_ID)));
 
         mockMvc.perform(post(MODELS_URL)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -92,6 +104,7 @@ class CarModelControllerWebMvcTest {
                 .update(eq(UNKNOWN_MODEL_ID), any(CarModelUpdateRequest.class));
 
         mockMvc.perform(put(MODELS_URL + "/{id}", UNKNOWN_MODEL_ID)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Corolla"}
@@ -115,6 +128,7 @@ class CarModelControllerWebMvcTest {
                 .update(eq(COROLLA_ID), any(CarModelUpdateRequest.class));
 
         mockMvc.perform(put(MODELS_URL + "/{id}", COROLLA_ID)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Camry"}
@@ -136,7 +150,8 @@ class CarModelControllerWebMvcTest {
                 .when(carModelService)
                 .delete(UNKNOWN_MODEL_ID);
 
-        mockMvc.perform(delete(MODELS_URL + "/{id}", UNKNOWN_MODEL_ID))
+        mockMvc.perform(delete(MODELS_URL + "/{id}", UNKNOWN_MODEL_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
 
@@ -153,7 +168,8 @@ class CarModelControllerWebMvcTest {
                 .when(carModelService)
                 .delete(COROLLA_ID);
 
-        mockMvc.perform(delete(MODELS_URL + "/{id}", COROLLA_ID))
+        mockMvc.perform(delete(MODELS_URL + "/{id}", COROLLA_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail").value(message));
@@ -171,12 +187,18 @@ class CarModelControllerWebMvcTest {
                 .when(carModelService)
                 .delete(COROLLA_ID);
 
-        mockMvc.perform(delete(MODELS_URL + "/{id}", COROLLA_ID))
+        mockMvc.perform(delete(MODELS_URL + "/{id}", COROLLA_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail")
                         .value("Operation violates a database constraint"));
 
         verify(carModelService).delete(COROLLA_ID);
+    }
+
+    private static RequestPostProcessor catalogEditor() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("SCOPE_catalog:write"));
     }
 }

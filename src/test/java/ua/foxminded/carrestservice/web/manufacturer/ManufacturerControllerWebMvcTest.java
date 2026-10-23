@@ -2,6 +2,7 @@ package ua.foxminded.carrestservice.web.manufacturer;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -11,20 +12,26 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.security.SecurityConfig;
 import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 import ua.foxminded.carrestservice.service.manufacturer.ManufacturerService;
 import ua.foxminded.carrestservice.service.manufacturer.dto.ManufacturerRequest;
 
 @WebMvcTest(ManufacturerController.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class ManufacturerControllerWebMvcTest {
 
     @Autowired
@@ -32,6 +39,9 @@ class ManufacturerControllerWebMvcTest {
 
     @MockitoBean
     private ManufacturerService manufacturerService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @Test
     @DisplayName("create: duplicate name -> returns 409 Conflict with error details")
@@ -41,6 +51,7 @@ class ManufacturerControllerWebMvcTest {
                         "Manufacturer already exists: Toyota"));
 
         mockMvc.perform(post(BASE_URL)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Toyota"}
@@ -63,6 +74,7 @@ class ManufacturerControllerWebMvcTest {
                 .update(eq(UNKNOWN_ID), any(ManufacturerRequest.class));
 
         mockMvc.perform(put(BASE_URL + "/{id}", UNKNOWN_ID)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Toyota"}
@@ -84,6 +96,7 @@ class ManufacturerControllerWebMvcTest {
                 .update(eq(TOYOTA_ID), any(ManufacturerRequest.class));
 
         mockMvc.perform(put(BASE_URL + "/{id}", TOYOTA_ID)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "BMW"}
@@ -106,7 +119,8 @@ class ManufacturerControllerWebMvcTest {
                 .when(manufacturerService)
                 .delete(UNKNOWN_ID);
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", UNKNOWN_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", UNKNOWN_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
 
@@ -121,7 +135,8 @@ class ManufacturerControllerWebMvcTest {
                 .when(manufacturerService)
                 .delete(TOYOTA_ID);
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", TOYOTA_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", TOYOTA_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail")
@@ -140,11 +155,17 @@ class ManufacturerControllerWebMvcTest {
                 .when(manufacturerService)
                 .delete(TOYOTA_ID);
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", TOYOTA_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", TOYOTA_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail").value(message));
 
         verify(manufacturerService).delete(TOYOTA_ID);
+    }
+
+    private static RequestPostProcessor catalogEditor() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("SCOPE_catalog:write"));
     }
 }

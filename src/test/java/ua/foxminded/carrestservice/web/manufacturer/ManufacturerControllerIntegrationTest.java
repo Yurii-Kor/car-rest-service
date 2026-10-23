@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -20,13 +21,15 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import tools.jackson.databind.json.JsonMapper;
 import ua.foxminded.carrestservice.repository.ManufacturerRepository;
+import ua.foxminded.carrestservice.testconfig.KeycloakTestConfig;
+import ua.foxminded.carrestservice.testconfig.KeycloakTestTokens;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgreSQLTestConfig.class)
+@Import({PostgreSQLTestConfig.class, KeycloakTestConfig.class})
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @Sql(
         scripts = "/sql/manufacturer/manufacturer-service-base.sql",
@@ -47,6 +50,9 @@ class ManufacturerControllerIntegrationTest {
     @Autowired
     private JsonMapper jsonMapper;
 
+    @Autowired
+    private KeycloakTestTokens tokens;
+
     @Test
     @DisplayName("create: valid request -> persists manufacturer and returns generated ID")
     void create_validRequest_persistsManufacturerAndReturnsId()
@@ -55,6 +61,8 @@ class ManufacturerControllerIntegrationTest {
         var initialCount = manufacturerRepository.count();
 
         var result = mockMvc.perform(post(BASE_URL)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "  Land   Rover  "}
@@ -174,6 +182,8 @@ class ManufacturerControllerIntegrationTest {
             throws Exception {
 
         mockMvc.perform(put(BASE_URL + "/{id}", TOYOTA_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "  Toyota   Motors  "}
@@ -199,7 +209,9 @@ class ManufacturerControllerIntegrationTest {
 
         var initialCount = manufacturerRepository.count();
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", UNUSED_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", UNUSED_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 

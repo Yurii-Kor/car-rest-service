@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -19,17 +20,23 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import ua.foxminded.carrestservice.security.SecurityConfig;
 import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
 
 @WebMvcTest(CarController.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class CarUpdateRequestValidationWebMvcTest {
 
     @Autowired
@@ -41,6 +48,9 @@ class CarUpdateRequestValidationWebMvcTest {
     @MockitoBean
     private CarQueryService carQueryService;
 
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
+
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("validCases")
     @DisplayName("update: valid request -> returns 204 and passes expected DTO")
@@ -50,6 +60,7 @@ class CarUpdateRequestValidationWebMvcTest {
             CarUpdateRequest expected) throws Exception {
 
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isNoContent())
@@ -60,7 +71,7 @@ class CarUpdateRequestValidationWebMvcTest {
 
     static Stream<Arguments> validCases() {
         var currentYear = Year.now();
-    
+
         return Stream.of(
                 Arguments.of(
                         "minimum year",
@@ -69,7 +80,7 @@ class CarUpdateRequestValidationWebMvcTest {
                         """,
                         new CarUpdateRequest(
                                 Year.of(1900), null, null)),
-    
+
                 Arguments.of(
                         "current year",
                         """
@@ -77,7 +88,7 @@ class CarUpdateRequestValidationWebMvcTest {
                         """.formatted(currentYear.getValue()),
                         new CarUpdateRequest(
                                 currentYear, null, null)),
-    
+
                 Arguments.of(
                         "all fields explicitly null",
                         """
@@ -88,7 +99,7 @@ class CarUpdateRequestValidationWebMvcTest {
                         }
                         """,
                         new CarUpdateRequest(null, null, null)),
-    
+
                 Arguments.of(
                         "duplicate category IDs",
                         """
@@ -115,6 +126,7 @@ class CarUpdateRequestValidationWebMvcTest {
             String expectedMessage) throws Exception {
 
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
+                .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isBadRequest())
@@ -186,5 +198,10 @@ class CarUpdateRequestValidationWebMvcTest {
                         """,
                         "categoryIds",
                         "must be greater than 0"));
+    }
+
+    private static RequestPostProcessor carEditor() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("SCOPE_cars:write"));
     }
 }

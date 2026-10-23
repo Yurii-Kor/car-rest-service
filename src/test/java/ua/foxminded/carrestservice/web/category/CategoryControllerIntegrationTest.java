@@ -1,4 +1,3 @@
-
 package ua.foxminded.carrestservice.web.category;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -21,13 +21,15 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import tools.jackson.databind.json.JsonMapper;
 import ua.foxminded.carrestservice.repository.CategoryRepository;
+import ua.foxminded.carrestservice.testconfig.KeycloakTestConfig;
+import ua.foxminded.carrestservice.testconfig.KeycloakTestTokens;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgreSQLTestConfig.class)
+@Import({PostgreSQLTestConfig.class, KeycloakTestConfig.class})
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @Sql(
         scripts = "/sql/category/category-service-base.sql",
@@ -48,12 +50,17 @@ class CategoryControllerIntegrationTest {
     @Autowired
     private JsonMapper jsonMapper;
 
+    @Autowired
+    private KeycloakTestTokens tokens;
+
     @Test
     @DisplayName("create: valid request -> persists category and returns generated ID")
     void create_validRequest_persistsCategoryAndReturnsId() throws Exception {
         var initialCount = categoryRepository.count();
 
         var result = mockMvc.perform(post(BASE_URL)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "  Sports    Car  "}
@@ -166,6 +173,8 @@ class CategoryControllerIntegrationTest {
     @DisplayName("update: valid request -> persists normalized category name")
     void update_validRequest_persistsNewName() throws Exception {
         mockMvc.perform(put(BASE_URL + "/{id}", HATCHBACK_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "  Sports    Car  "}
@@ -191,7 +200,9 @@ class CategoryControllerIntegrationTest {
     void delete_existingCategory_removesCategory() throws Exception {
         var initialCount = categoryRepository.count();
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", HATCHBACK_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", HATCHBACK_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 

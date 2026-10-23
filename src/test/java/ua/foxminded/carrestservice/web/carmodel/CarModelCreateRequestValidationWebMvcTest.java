@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -20,16 +21,22 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import ua.foxminded.carrestservice.security.SecurityConfig;
 import ua.foxminded.carrestservice.service.carmodel.CarModelService;
 import ua.foxminded.carrestservice.service.carmodel.dto.CarModelCreateRequest;
 
 @WebMvcTest(CarModelController.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class CarModelCreateRequestValidationWebMvcTest {
 
     @Autowired
@@ -37,6 +44,9 @@ class CarModelCreateRequestValidationWebMvcTest {
 
     @MockitoBean
     private CarModelService carModelService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("validCases")
@@ -46,11 +56,12 @@ class CarModelCreateRequestValidationWebMvcTest {
             String name,
             Long manufacturerId,
             String expectedName) throws Exception {
-    
+
         when(carModelService.create(any(CarModelCreateRequest.class)))
                 .thenReturn(COROLLA_ID);
-    
+
         mockMvc.perform(post(MODELS_URL)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -62,7 +73,7 @@ class CarModelCreateRequestValidationWebMvcTest {
                 .andExpect(header().string(
                         "Location", MODELS_URL + "/" + COROLLA_ID))
                 .andExpect(jsonPath("$.id").value(COROLLA_ID));
-    
+
         verify(carModelService).create(
                 new CarModelCreateRequest(expectedName, manufacturerId));
     }
@@ -74,19 +85,19 @@ class CarModelCreateRequestValidationWebMvcTest {
                         "A",
                         TOYOTA_ID,
                         "A"),
-    
+
                 Arguments.of(
                         "maximum length of 255",
                         "A".repeat(255),
                         TOYOTA_ID,
                         "A".repeat(255)),
-    
+
                 Arguments.of(
                         "minimum positive manufacturer ID",
                         COROLLA_NAME,
                         1L,
                         COROLLA_NAME),
-    
+
                 Arguments.of(
                         "extra spaces -> normalized name",
                         "  Corolla   Cross  ",
@@ -104,6 +115,7 @@ class CarModelCreateRequestValidationWebMvcTest {
             String expectedMessage) throws Exception {
 
         mockMvc.perform(post(MODELS_URL)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isBadRequest())
@@ -182,6 +194,7 @@ class CarModelCreateRequestValidationWebMvcTest {
     void create_allFieldsNull_returnsBadRequest() throws Exception {
 
         mockMvc.perform(post(MODELS_URL)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson("null", "null")))
                 .andExpect(status().isBadRequest())
@@ -191,6 +204,11 @@ class CarModelCreateRequestValidationWebMvcTest {
                         containsString("manufacturerId"))));
 
         verifyNoInteractions(carModelService);
+    }
+
+    private static RequestPostProcessor catalogEditor() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("SCOPE_catalog:write"));
     }
 
     private static String requestJson(

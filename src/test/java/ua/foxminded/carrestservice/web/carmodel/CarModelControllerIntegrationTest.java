@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -20,13 +21,15 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import tools.jackson.databind.json.JsonMapper;
 import ua.foxminded.carrestservice.repository.CarModelRepository;
+import ua.foxminded.carrestservice.testconfig.KeycloakTestConfig;
+import ua.foxminded.carrestservice.testconfig.KeycloakTestTokens;
 import ua.foxminded.carrestservice.testconfig.PostgreSQLTestConfig;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(PostgreSQLTestConfig.class)
+@Import({PostgreSQLTestConfig.class, KeycloakTestConfig.class})
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @Sql(
         scripts = "/sql/carmodel/car-model-service-base.sql",
@@ -47,12 +50,17 @@ class CarModelControllerIntegrationTest {
     @Autowired
     private JsonMapper jsonMapper;
 
+    @Autowired
+    private KeycloakTestTokens tokens;
+
     @Test
     @DisplayName("create: valid request -> persists model and returns created ID")
     void create_validRequest_persistsModelAndReturnsId() throws Exception {
         var initialCount = carModelRepository.count();
 
         var result = mockMvc.perform(post(MODELS_URL)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {
@@ -168,6 +176,8 @@ class CarModelControllerIntegrationTest {
     @DisplayName("update: valid request -> persists normalized name")
     void update_validRequest_persistsNewName() throws Exception {
         mockMvc.perform(put(MODELS_URL + "/{id}", CAMRY_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "  Camry   Hybrid  "}
@@ -194,7 +204,9 @@ class CarModelControllerIntegrationTest {
     void delete_existingModel_removesModel() throws Exception {
         var initialCount = carModelRepository.count();
 
-        mockMvc.perform(delete(MODELS_URL + "/{id}", CAMRY_ID))
+        mockMvc.perform(delete(MODELS_URL + "/{id}", CAMRY_ID)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "Bearer " + tokens.catalogEditorToken()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 

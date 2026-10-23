@@ -2,6 +2,7 @@ package ua.foxminded.carrestservice.web.category;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -11,20 +12,26 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import ua.foxminded.carrestservice.security.SecurityConfig;
 import ua.foxminded.carrestservice.service.category.CategoryService;
 import ua.foxminded.carrestservice.service.category.dto.CategoryRequest;
 import ua.foxminded.carrestservice.service.exception.EntityInUseException;
 
 @WebMvcTest(CategoryController.class)
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class CategoryControllerWebMvcTest {
 
     @Autowired
@@ -32,6 +39,9 @@ class CategoryControllerWebMvcTest {
 
     @MockitoBean
     private CategoryService categoryService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @Test
     @DisplayName("create: duplicate category name -> returns 409 Conflict with error details")
@@ -41,6 +51,7 @@ class CategoryControllerWebMvcTest {
                         "Category already exists: Sedan"));
 
         mockMvc.perform(post(BASE_URL)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Sedan"}
@@ -63,6 +74,7 @@ class CategoryControllerWebMvcTest {
                 .update(eq(UNKNOWN_ID), any(CategoryRequest.class));
 
         mockMvc.perform(put(BASE_URL + "/{id}", UNKNOWN_ID)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Sedan"}
@@ -84,6 +96,7 @@ class CategoryControllerWebMvcTest {
                 .update(eq(SEDAN_ID), any(CategoryRequest.class));
 
         mockMvc.perform(put(BASE_URL + "/{id}", SEDAN_ID)
+                .with(catalogEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "SUV"}
@@ -106,7 +119,8 @@ class CategoryControllerWebMvcTest {
                 .when(categoryService)
                 .delete(UNKNOWN_ID);
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", UNKNOWN_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", UNKNOWN_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
 
@@ -123,7 +137,8 @@ class CategoryControllerWebMvcTest {
                 .when(categoryService)
                 .delete(SEDAN_ID);
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", SEDAN_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", SEDAN_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail").value(message));
@@ -139,12 +154,18 @@ class CategoryControllerWebMvcTest {
                 .when(categoryService)
                 .delete(SEDAN_ID);
 
-        mockMvc.perform(delete(BASE_URL + "/{id}", SEDAN_ID))
+        mockMvc.perform(delete(BASE_URL + "/{id}", SEDAN_ID)
+                .with(catalogEditor()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.detail")
                         .value("Operation violates a database constraint"));
 
         verify(categoryService).delete(SEDAN_ID);
+    }
+
+    private static RequestPostProcessor catalogEditor() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("SCOPE_catalog:write"));
     }
 }

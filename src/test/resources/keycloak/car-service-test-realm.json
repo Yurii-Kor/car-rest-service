@@ -1,0 +1,153 @@
+{
+  "realm": "car-service-test",
+  "enabled": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      {
+        "name": "CAR_EDITOR"
+      },
+      {
+        "name": "CATALOG_EDITOR"
+      }
+    ]
+  },
+  "clientScopes": [
+    {
+      "name": "cars:write",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "catalog:write",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    }
+  ],
+  "scopeMappings": [
+    {
+      "clientScope": "cars:write",
+      "roles": ["CAR_EDITOR"]
+    },
+    {
+      "clientScope": "catalog:write",
+      "roles": ["CATALOG_EDITOR"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "car-rest-test",
+      "name": "Car REST integration test client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "cars:write",
+        "catalog:write"
+      ],
+      "protocolMappers": [
+        {
+          "name": "car-rest-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "car-rest-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "car-rest-other-audience",
+      "name": "Wrong audience integration test client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "cars:write",
+        "catalog:write"
+      ],
+      "protocolMappers": [
+        {
+          "name": "other-rest-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "other-rest-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "car-editor",
+      "enabled": true,
+      "email": "car-editor@example.test",
+      "emailVerified": true,
+      "firstName": "Car",
+      "lastName": "Editor",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "car-editor-test-password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["CAR_EDITOR"]
+    },
+    {
+      "username": "catalog-editor",
+      "enabled": true,
+      "email": "catalog-editor@example.test",
+      "emailVerified": true,
+      "firstName": "Catalog",
+      "lastName": "Editor",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "catalog-editor-test-password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["CATALOG_EDITOR"]
+    },
+    {
+      "username": "viewer",
+      "enabled": true,
+      "email": "viewer@example.test",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "Viewer",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "viewer-test-password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
