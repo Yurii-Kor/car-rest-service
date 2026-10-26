@@ -31,3 +31,10 @@ spring:
 logging:
   level:
     org.hibernate.SQL: DEBUG
+
+springdoc:
+  default-produces-media-type: application/json
+  swagger-ui:
+    oauth:
+      client-id: car-rest-swagger-ui
+      use-pkce-with-authorization-code-grant: true

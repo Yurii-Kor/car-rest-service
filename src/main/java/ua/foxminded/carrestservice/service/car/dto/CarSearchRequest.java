@@ -4,6 +4,7 @@ import java.time.Year;
 import java.util.Optional;
 import java.util.Set;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
@@ -18,10 +19,22 @@ public record CarSearchRequest(
         @Positive
         Long modelId,
 
+        @Schema(
+                implementation = Integer.class,
+                description = "Start of manufacturing year range",
+                minimum = "1900",
+                example = "2010"
+        )
         @MinYear(1900)
         @PastOrPresent
         Year yearFrom,
 
+        @Schema(
+                implementation = Integer.class,
+                description = "Start of manufacturing year range",
+                minimum = "1900",
+                example = "2010"
+        )
         @MinYear(1900)
         @PastOrPresent
         Year yearTo,

@@ -192,17 +192,21 @@ class CarControllerWebMvcTest {
     }
 
     @Test
-    @DisplayName("update: empty JSON object -> passes all-null request to service")
-    void update_emptyRequest_passesNullFields() throws Exception {
+    @DisplayName("update: empty JSON object -> returns 400 Bad Request")
+    void update_emptyRequest_returnsBadRequest() throws Exception {
+    
         mockMvc.perform(patch(BASE_URL + "/{id}", CAR_ID)
                 .with(carEditor())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
-                .andExpect(status().isNoContent());
-
-        verify(carService).update(
-                CAR_ID,
-                new CarUpdateRequest(null, null, null));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail")
+                        .value("Request validation failed"))
+                .andExpect(jsonPath("$.errors[0]")
+                        .value("anyFieldProvided: At least one field must be provided"));
+    
+        verifyNoInteractions(carService);
     }
 
     @Test

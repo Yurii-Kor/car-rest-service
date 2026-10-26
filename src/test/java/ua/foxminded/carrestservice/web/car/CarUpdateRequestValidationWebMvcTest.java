@@ -71,7 +71,7 @@ class CarUpdateRequestValidationWebMvcTest {
 
     static Stream<Arguments> validCases() {
         var currentYear = Year.now();
-
+    
         return Stream.of(
                 Arguments.of(
                         "minimum year",
@@ -80,7 +80,7 @@ class CarUpdateRequestValidationWebMvcTest {
                         """,
                         new CarUpdateRequest(
                                 Year.of(1900), null, null)),
-
+    
                 Arguments.of(
                         "current year",
                         """
@@ -88,18 +88,15 @@ class CarUpdateRequestValidationWebMvcTest {
                         """.formatted(currentYear.getValue()),
                         new CarUpdateRequest(
                                 currentYear, null, null)),
-
+    
                 Arguments.of(
-                        "all fields explicitly null",
+                        "empty category IDs",
                         """
-                        {
-                            "year": null,
-                            "modelId": null,
-                            "categoryIds": null
-                        }
+                        {"categoryIds": []}
                         """,
-                        new CarUpdateRequest(null, null, null)),
-
+                        new CarUpdateRequest(
+                                null, null, Set.of())),
+    
                 Arguments.of(
                         "duplicate category IDs",
                         """
@@ -149,7 +146,7 @@ class CarUpdateRequestValidationWebMvcTest {
                         """,
                         "year",
                         "Year must not be earlier than 1900"),
-
+    
                 Arguments.of(
                         "year zero",
                         """
@@ -157,7 +154,7 @@ class CarUpdateRequestValidationWebMvcTest {
                         """,
                         "year",
                         "Year must not be earlier than 1900"),
-
+    
                 Arguments.of(
                         "future year",
                         """
@@ -166,7 +163,7 @@ class CarUpdateRequestValidationWebMvcTest {
                                 Year.now().plusYears(1).getValue()),
                         "year",
                         "must be a date in the past or in the present"),
-
+    
                 Arguments.of(
                         "null category element",
                         """
@@ -174,7 +171,7 @@ class CarUpdateRequestValidationWebMvcTest {
                         """.formatted(SEDAN_ID),
                         "categoryIds",
                         "must not be null"),
-
+    
                 Arguments.of(
                         "zero model ID",
                         """
@@ -182,7 +179,7 @@ class CarUpdateRequestValidationWebMvcTest {
                         """,
                         "modelId",
                         "must be greater than 0"),
-
+    
                 Arguments.of(
                         "negative model ID",
                         """
@@ -190,14 +187,51 @@ class CarUpdateRequestValidationWebMvcTest {
                         """,
                         "modelId",
                         "must be greater than 0"),
-
+    
                 Arguments.of(
                         "negative category ID",
                         """
                         {"categoryIds": [-1]}
                         """,
                         "categoryIds",
-                        "must be greater than 0"));
+                        "must be greater than 0"),
+    
+                Arguments.of(
+                        "empty request",
+                        """
+                        {}
+                        """,
+                        "anyFieldProvided",
+                        "At least one field must be provided"),
+    
+                Arguments.of(
+                        "all fields explicitly null",
+                        """
+                        {
+                            "year": null,
+                            "modelId": null,
+                            "categoryIds": null
+                        }
+                        """,
+                        "anyFieldProvided",
+                        "At least one field must be provided"),
+    
+                Arguments.of(
+                        "unknown field only",
+                        """
+                        {"name": "TEST"}
+                        """,
+                        "anyFieldProvided",
+                        "At least one field must be provided"),
+                Arguments.of(
+                        "unknown JSON field only",
+                        """
+                        {
+                            "name": "TEST"
+                        }
+                        """,
+                        "anyFieldProvided",
+                        "At least one field must be provided"));
     }
 
     private static RequestPostProcessor carEditor() {
