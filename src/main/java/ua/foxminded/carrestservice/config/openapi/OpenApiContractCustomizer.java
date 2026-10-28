@@ -1,6 +1,7 @@
 package ua.foxminded.carrestservice.config.openapi;
 
 import static ua.foxminded.carrestservice.config.openapi.OpenApiConfig.SECURITY_SCHEME;
+import static ua.foxminded.carrestservice.config.openapi.OpenApiConfig.JWT_SECURITY_SCHEME;
 import static ua.foxminded.carrestservice.security.ScopeConstants.CARS_WRITE;
 import static ua.foxminded.carrestservice.security.ScopeConstants.CATALOG_WRITE;
 
@@ -64,6 +65,10 @@ public class OpenApiContractCustomizer {
         operation.addSecurityItem(
                 new SecurityRequirement()
                         .addList(SECURITY_SCHEME, scope));
+
+        operation.addSecurityItem(
+                new SecurityRequirement()
+                        .addList(JWT_SECURITY_SCHEME));
     }
 
     private void customizeProblemDetailProperties(

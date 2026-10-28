@@ -1,5 +1,6 @@
 package ua.foxminded.carrestservice.web.car;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ProblemDetail;
@@ -128,8 +129,8 @@ public interface CarApi {
             )
     })
     Page<CarDetails> findAll(
-            CarSearchRequest request,
-            Pageable pageable);
+            @ParameterObject CarSearchRequest request,
+            @ParameterObject Pageable pageable);
 
     @Operation(
             summary = "Update a car",

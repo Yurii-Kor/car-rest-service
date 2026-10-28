@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class OpenApiConfig {
 
     static final String SECURITY_SCHEME = "keycloak";
+    static final String JWT_SECURITY_SCHEME = "bearerJwt";
 
     private final OpenApiContractCustomizer customizer;
 
@@ -44,6 +45,14 @@ public class OpenApiConfig {
                 .flows(new OAuthFlows()
                         .authorizationCode(oauthFlow));
 
+        var jwtScheme = new SecurityScheme()
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat("JWT")
+                .description(
+                        "Paste an existing Keycloak JWT access token. "
+                                + "The token must contain the required scopes.");
+
         return new OpenAPI()
                 .info(new Info()
                         .title("Car REST Service API")
@@ -52,7 +61,9 @@ public class OpenApiConfig {
                                 "REST API for managing cars, manufacturers, models and categories"))
                 .components(new Components()
                         .addSecuritySchemes(
-                                SECURITY_SCHEME, securityScheme));
+                                SECURITY_SCHEME, securityScheme)
+                        .addSecuritySchemes(
+                                JWT_SECURITY_SCHEME, jwtScheme));
     }
 
     @Bean

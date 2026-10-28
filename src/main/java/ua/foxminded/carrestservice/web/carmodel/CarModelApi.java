@@ -2,6 +2,7 @@ package ua.foxminded.carrestservice.web.carmodel;
 
 import java.util.List;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ProblemDetail;
@@ -134,7 +135,8 @@ public interface CarModelApi {
             )
     })
     Page<CarModelResponse> findAllByManufacturerId(
-            Long manufacturerId, Pageable pageable);
+            Long manufacturerId,
+            @ParameterObject Pageable pageable);
 
     @Operation(
             summary = "Get car model options",

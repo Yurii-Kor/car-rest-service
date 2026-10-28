@@ -2,6 +2,7 @@ package ua.foxminded.carrestservice.web.manufacturer;
 
 import java.util.List;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ProblemDetail;
@@ -102,7 +103,7 @@ public interface ManufacturerApi {
             description = "Manufacturers retrieved",
             useReturnTypeSchema = true
     )
-    Page<ManufacturerResponse> findAll(Pageable pageable);
+    Page<ManufacturerResponse> findAll(@ParameterObject Pageable pageable);
 
     @Operation(
             summary = "Get manufacturer options",

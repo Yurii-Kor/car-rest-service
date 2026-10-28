@@ -3,7 +3,6 @@ package ua.foxminded.carrestservice.web.manufacturer;
 import java.net.URI;
 import java.util.List;
 
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -51,8 +50,6 @@ public class ManufacturerController implements ManufacturerApi {
     @Override
     @GetMapping
     public Page<ManufacturerResponse> findAll(
-
-            @ParameterObject
             @PageableDefault(size = 12, sort = "name") Pageable pageable) {
 
         return manufacturerService.findAll(pageable)

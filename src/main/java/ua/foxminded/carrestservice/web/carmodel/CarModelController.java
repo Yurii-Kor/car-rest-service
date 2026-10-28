@@ -3,7 +3,6 @@ package ua.foxminded.carrestservice.web.carmodel;
 import java.net.URI;
 import java.util.List;
 
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -53,8 +52,6 @@ public class CarModelController implements CarModelApi {
     @GetMapping
     public Page<CarModelResponse> findAllByManufacturerId(
             @RequestParam Long manufacturerId,
-
-            @ParameterObject
             @PageableDefault(size = 12, sort = "name") Pageable pageable) {
 
         return carModelService.findAllByManufacturerId(

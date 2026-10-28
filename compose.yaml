@@ -26,17 +26,21 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
     container_name: car-rest-keycloak
-    command: start-dev
+    command: ["start-dev", "--import-realm"]
 
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:?KEYCLOAK_ADMIN_USERNAME is required}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD is required}
+      CAR_EDITOR_PASSWORD: ${CAR_EDITOR_PASSWORD:?CAR_EDITOR_PASSWORD is required}
+      CATALOG_EDITOR_PASSWORD: ${CATALOG_EDITOR_PASSWORD:?CATALOG_EDITOR_PASSWORD is required}
+      CAR_TESTER_PASSWORD: ${CAR_TESTER_PASSWORD:?CAR_TESTER_PASSWORD is required}
 
     ports:
       - "127.0.0.1:8180:8080"
 
     volumes:
       - keycloak-data:/opt/keycloak/data
+      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
 
 volumes:
   postgres-data:

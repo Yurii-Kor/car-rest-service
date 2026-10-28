@@ -31,9 +31,9 @@ public record CarSearchRequest(
 
         @Schema(
                 implementation = Integer.class,
-                description = "Start of manufacturing year range",
+                description = "End of manufacturing year range",
                 minimum = "1900",
-                example = "2010"
+                example = "2020"
         )
         @MinYear(1900)
         @PastOrPresent
