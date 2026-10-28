@@ -5,8 +5,11 @@ import java.util.List;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -14,10 +17,17 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import ua.foxminded.carrestservice.service.manufacturer.dto.ManufacturerRequest;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 import ua.foxminded.carrestservice.web.manufacturer.dto.ManufacturerResponse;
 
+@Tag(
+        name = "Manufacturers",
+        description = "Manufacturer management and selection"
+)
+@RequestMapping("/api/v1/manufacturers")
 public interface ManufacturerApi {
 
     @Operation(
@@ -69,7 +79,9 @@ public interface ManufacturerApi {
                     )
             )
     })
-    ResponseEntity<IdResponse> create(ManufacturerRequest request);
+    @PostMapping
+    ResponseEntity<IdResponse> create(
+            @Valid @RequestBody ManufacturerRequest request);
 
     @Operation(summary = "Get a manufacturer by ID")
     @ApiResponses({
@@ -92,7 +104,8 @@ public interface ManufacturerApi {
                     )
             )
     })
-    ManufacturerResponse findById(Long id);
+    @GetMapping("/{id}")
+    ManufacturerResponse findById(@PathVariable("id") Long id);
 
     @Operation(
             summary = "Get manufacturers",
@@ -103,7 +116,10 @@ public interface ManufacturerApi {
             description = "Manufacturers retrieved",
             useReturnTypeSchema = true
     )
-    Page<ManufacturerResponse> findAll(@ParameterObject Pageable pageable);
+    @GetMapping
+    Page<ManufacturerResponse> findAll(
+            @ParameterObject
+            @PageableDefault(size = 12, sort = "name") Pageable pageable);
 
     @Operation(
             summary = "Get manufacturer options",
@@ -115,6 +131,7 @@ public interface ManufacturerApi {
             description = "Manufacturer options retrieved",
             useReturnTypeSchema = true
     )
+    @GetMapping("/options")
     List<ManufacturerResponse> findAllForSelection();
 
     @Operation(
@@ -166,7 +183,11 @@ public interface ManufacturerApi {
                     )
             )
     })
-    void update(Long id, ManufacturerRequest request);
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void update(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody ManufacturerRequest request);
 
     @Operation(
             summary = "Delete a manufacturer",
@@ -209,5 +230,7 @@ public interface ManufacturerApi {
                     )
             )
     })
-    void delete(Long id);
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void delete(@PathVariable("id") Long id);
 }

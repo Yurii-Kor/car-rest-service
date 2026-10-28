@@ -5,34 +5,23 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ua.foxminded.carrestservice.service.manufacturer.ManufacturerService;
 import ua.foxminded.carrestservice.service.manufacturer.dto.ManufacturerRequest;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 import ua.foxminded.carrestservice.web.manufacturer.dto.ManufacturerResponse;
 
-@Tag(
-        name = "Manufacturers",
-        description = "Manufacturer management and selection"
-)
 @RestController
-@RequestMapping("/api/v1/manufacturers")
 @RequiredArgsConstructor
 public class ManufacturerController implements ManufacturerApi {
 
     private final ManufacturerService manufacturerService;
 
     @Override
-    @PostMapping
-    public ResponseEntity<IdResponse> create(
-            @Valid @RequestBody ManufacturerRequest request) {
+    public ResponseEntity<IdResponse> create(ManufacturerRequest request) {
 
         var id = manufacturerService.create(request);
 
@@ -42,42 +31,32 @@ public class ManufacturerController implements ManufacturerApi {
     }
 
     @Override
-    @GetMapping("/{id}")
-    public ManufacturerResponse findById(@PathVariable Long id) {
+    public ManufacturerResponse findById(Long id) {
         return new ManufacturerResponse(manufacturerService.findById(id));
     }
 
     @Override
-    @GetMapping
-    public Page<ManufacturerResponse> findAll(
-            @PageableDefault(size = 12, sort = "name") Pageable pageable) {
+    public Page<ManufacturerResponse> findAll(Pageable pageable) {
 
         return manufacturerService.findAll(pageable)
                 .map(ManufacturerResponse::new);
     }
 
     @Override
-    @GetMapping("/options")
     public List<ManufacturerResponse> findAllForSelection() {
+
         return manufacturerService.findAllForSelection().stream()
                 .map(ManufacturerResponse::new)
                 .toList();
     }
 
     @Override
-    @PutMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(
-            @PathVariable Long id,
-            @Valid @RequestBody ManufacturerRequest request) {
-
+    public void update(Long id, ManufacturerRequest request) {
         manufacturerService.update(id, request);
     }
 
     @Override
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(Long id) {
         manufacturerService.delete(id);
     }
 }

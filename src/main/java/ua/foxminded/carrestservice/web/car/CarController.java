@@ -4,13 +4,9 @@ import java.net.URI;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ua.foxminded.carrestservice.service.car.CarQueryService;
 import ua.foxminded.carrestservice.service.car.CarService;
@@ -20,12 +16,7 @@ import ua.foxminded.carrestservice.service.car.dto.CarSearchRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
-@Tag(
-        name = "Cars",
-        description = "Car management and search"
-)
 @RestController
-@RequestMapping("/api/v1/cars")
 @RequiredArgsConstructor
 public class CarController implements CarApi {
 
@@ -33,9 +24,7 @@ public class CarController implements CarApi {
     private final CarQueryService carQueryService;
 
     @Override
-    @PostMapping
-    public ResponseEntity<IdResponse> create(
-            @Valid @RequestBody CarCreateRequest request) {
+    public ResponseEntity<IdResponse> create(CarCreateRequest request) {
 
         var id = carService.create(request);
 
@@ -45,34 +34,25 @@ public class CarController implements CarApi {
     }
 
     @Override
-    @GetMapping("/{id}")
-    public CarDetails findById(@PathVariable Long id) {
+    public CarDetails findById(Long id) {
         return carQueryService.findById(id);
     }
 
     @Override
-    @GetMapping
     public Page<CarDetails> findAll(
-            @Valid @ModelAttribute CarSearchRequest request,
-            @PageableDefault(size = 12, sort = "id") Pageable pageable) {
+            CarSearchRequest request,
+            Pageable pageable) {
 
         return carQueryService.findAll(request, pageable);
     }
 
     @Override
-    @PatchMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void update(
-            @PathVariable Long id,
-            @Valid @RequestBody CarUpdateRequest request) {
-
+    public void update(Long id, CarUpdateRequest request) {
         carService.update(id, request);
     }
 
     @Override
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(Long id) {
         carService.delete(id);
     }
 }

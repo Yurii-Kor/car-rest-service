@@ -3,8 +3,11 @@ package ua.foxminded.carrestservice.web.car;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -12,12 +15,19 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import ua.foxminded.carrestservice.service.car.dto.CarCreateRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarDetails;
 import ua.foxminded.carrestservice.service.car.dto.CarSearchRequest;
 import ua.foxminded.carrestservice.service.car.dto.CarUpdateRequest;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
+@Tag(
+        name = "Cars",
+        description = "Car management and search"
+)
+@RequestMapping("/api/v1/cars")
 public interface CarApi {
 
     @Operation(
@@ -79,7 +89,9 @@ public interface CarApi {
                     )
             )
     })
-    ResponseEntity<IdResponse> create(CarCreateRequest request);
+    @PostMapping
+    ResponseEntity<IdResponse> create(
+            @Valid @RequestBody CarCreateRequest request);
 
     @Operation(
             summary = "Get a car by ID"
@@ -104,7 +116,8 @@ public interface CarApi {
                     )
             )
     })
-    CarDetails findById(Long id);
+    @GetMapping("/{id}")
+    CarDetails findById(@PathVariable("id") Long id);
 
     @Operation(
             summary = "Search cars",
@@ -128,9 +141,11 @@ public interface CarApi {
                     )
             )
     })
+    @GetMapping
     Page<CarDetails> findAll(
-            @ParameterObject CarSearchRequest request,
-            @ParameterObject Pageable pageable);
+            @Valid @ModelAttribute @ParameterObject CarSearchRequest request,
+            @ParameterObject
+            @PageableDefault(size = 12, sort = "id") Pageable pageable);
 
     @Operation(
             summary = "Update a car",
@@ -182,7 +197,11 @@ public interface CarApi {
                     )
             )
     })
-    void update(Long id, CarUpdateRequest request);
+    @PatchMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void update(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CarUpdateRequest request);
 
     @Operation(
             summary = "Delete a car"
@@ -213,5 +232,7 @@ public interface CarApi {
                     )
             )
     })
-    void delete(Long id);
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void delete(@PathVariable("id") Long id);
 }

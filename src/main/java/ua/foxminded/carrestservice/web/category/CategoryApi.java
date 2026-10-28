@@ -5,8 +5,11 @@ import java.util.List;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -14,10 +17,17 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import ua.foxminded.carrestservice.service.category.dto.CategoryRequest;
 import ua.foxminded.carrestservice.web.category.dto.CategoryResponse;
 import ua.foxminded.carrestservice.web.common.dto.IdResponse;
 
+@Tag(
+        name = "Categories",
+        description = "Category management and selection"
+)
+@RequestMapping("/api/v1/categories")
 public interface CategoryApi {
 
     @Operation(
@@ -69,7 +79,9 @@ public interface CategoryApi {
                     )
             )
     })
-    ResponseEntity<IdResponse> create(CategoryRequest request);
+    @PostMapping
+    ResponseEntity<IdResponse> create(
+            @Valid @RequestBody CategoryRequest request);
 
     @Operation(summary = "Get a category by ID")
     @ApiResponses({
@@ -92,7 +104,8 @@ public interface CategoryApi {
                     )
             )
     })
-    CategoryResponse findById(Long id);
+    @GetMapping("/{id}")
+    CategoryResponse findById(@PathVariable("id") Long id);
 
     @Operation(
             summary = "Get categories",
@@ -103,7 +116,10 @@ public interface CategoryApi {
             description = "Categories retrieved",
             useReturnTypeSchema = true
     )
-    Page<CategoryResponse> findAll(@ParameterObject Pageable pageable);
+    @GetMapping
+    Page<CategoryResponse> findAll(
+            @ParameterObject
+            @PageableDefault(size = 12, sort = "name") Pageable pageable);
 
     @Operation(
             summary = "Get category options",
@@ -115,6 +131,7 @@ public interface CategoryApi {
             description = "Category options retrieved",
             useReturnTypeSchema = true
     )
+    @GetMapping("/options")
     List<CategoryResponse> findAllForSelection();
 
     @Operation(
@@ -166,7 +183,11 @@ public interface CategoryApi {
                     )
             )
     })
-    void update(Long id, CategoryRequest request);
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void update(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CategoryRequest request);
 
     @Operation(
             summary = "Delete a category",
@@ -208,5 +229,7 @@ public interface CategoryApi {
                     )
             )
     })
-    void delete(Long id);
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void delete(@PathVariable("id") Long id);
 }
