@@ -1,170 +1,180 @@
-
 # Car REST Service
 
-A RESTful web application for managing and querying car catalog data, built with Java and Spring Boot.
+A RESTful API for managing a car catalog, built with Java 21 and Spring Boot 4.
 
 ## Tech Stack
 
-- Java 21 & Spring Boot 4
-- Spring Web MVC
-- Spring Data JPA / Hibernate
-- Spring Security / OAuth2 Resource Server
-- Keycloak
-- Springdoc OpenAPI 3 / Swagger UI
-- PostgreSQL 16
-- Flyway Database Migrations
-- Docker Compose
-- Maven
-- JUnit 5 / Testcontainers
+- Java 21, Spring Boot 4, Spring Web MVC
+- Spring Data JPA, Hibernate, PostgreSQL 16
+- Spring Security, OAuth2 Resource Server, Keycloak
+- Springdoc OpenAPI 3, Swagger UI
+- Flyway, Maven
+- Docker, Docker Compose
+- JUnit 5, Testcontainers
 
-## Project Status
+## Features
 
-**Under development**
+- CRUD operations for cars, manufacturers, models, and categories.
+- Car filtering, pagination, and validation.
+- Database migrations and CSV data import using Flyway.
+- OAuth2/JWT authentication with scope-based authorization.
+- OpenAPI documentation and Postman integration tests.
+- Automated tests and containerized deployment.
 
-Implemented functionality includes:
+## Environment Configuration
 
-- REST API for cars, manufacturers, models, and categories.
-- Database schema management and CSV data import using Flyway.
-- Filtering, pagination, and CRUD operations.
-- OAuth2 authorization with Keycloak and scope-based access control.
-- OpenAPI 3 documentation and Postman integration tests.
-- Automated integration and security tests.
+Create a `.env` file in the project root with the following variables:
 
-## Environment Variables
+| Variable | Example / Description |
+|---|---|
+| `POSTGRES_DB` | `car_rest_db` |
+| `POSTGRES_USER` | `car_rest` |
+| `POSTGRES_PASSWORD` | Database password |
+| `KEYCLOAK_ADMIN_USERNAME` | `admin` |
+| `KEYCLOAK_ADMIN_PASSWORD` | Keycloak administrator password |
+| `KEYCLOAK_PUBLIC_URL` | `http://localhost:8180` |
+| `KEYCLOAK_ISSUER_URI` | `http://localhost:8180/realms/car-service` |
+| `CAR_EDITOR_PASSWORD` | Car editor test user password |
+| `CATALOG_EDITOR_PASSWORD` | Catalog editor test user password |
+| `CAR_TESTER_PASSWORD` | Combined-permissions test user password |
 
-The application requires the following environment variables, defined in a `.env` file in the project root.
-
-| Variable | Description | Example |
-|---|---|---|
-| `POSTGRES_DB` | PostgreSQL database name | `car_rest_db` |
-| `POSTGRES_USER` | PostgreSQL database username | `car_rest` |
-| `POSTGRES_PASSWORD` | PostgreSQL database password | `<database-password>` |
-| `KEYCLOAK_ADMIN_USERNAME` | Keycloak administrator username | `admin` |
-| `KEYCLOAK_ADMIN_PASSWORD` | Keycloak administrator password | `<admin-password>` |
-| `KEYCLOAK_ISSUER_URI` | Keycloak realm issuer URL used for JWT validation | `http://localhost:8180/realms/car-service` |
-| `CAR_EDITOR_PASSWORD` | Password for the car editor test user | `<car-editor-password>` |
-| `CATALOG_EDITOR_PASSWORD` | Password for the catalog editor test user | `<catalog-editor-password>` |
-| `CAR_TESTER_PASSWORD` | Password for the test user with both write permissions | `<car-tester-password>` |
-
-All nine variables are required for the local development setup.
-
-Docker Compose reads the `.env` file to configure PostgreSQL and Keycloak. Spring Boot imports the same file through `spring.config.import` in `application.yaml`.
-
-The test user passwords are injected into the Keycloak realm configuration during import. No passwords or access tokens are stored in the realm JSON.
+All ten variables are required for the Docker Compose setup.
 
 The `.env` file is excluded from Git and must not be committed.
 
-## Running Locally
+## Running the Application
 
-1. Create a `.env` file in the project root and configure all required variables listed above.
-2. Ensure Docker Desktop is running.
-3. Start PostgreSQL and Keycloak:
+The project provides two Docker Compose configurations:
 
-   ```powershell
-   docker compose up -d
-   ```
+- `compose.local.yaml` — PostgreSQL and Keycloak in Docker, Spring Boot running locally.
+- `compose.yaml` — the complete application stack running in Docker.
 
-4. Verify the containers:
+Both configurations reuse the same persistent volumes.
 
-   ```powershell
-   docker compose ps
-   ```
+### Initial Setup
 
-5. Start the Spring Boot application from Eclipse or run:
+Docker Desktop and Docker Compose are required. Java 21 is additionally required for running Spring Boot outside Docker.
 
-   ```powershell
-   .\mvnw.cmd spring-boot:run
-   ```
-
-The application connects to PostgreSQL at `localhost:5433` and uses Keycloak at `localhost:8180`.
-
-### Keycloak Realm Import
-
-The `car-service` Keycloak realm is automatically imported from:
-
-`docker/keycloak/import/car-service-realm.json`
-
-The Docker Compose configuration mounts this directory into the Keycloak container and starts Keycloak with the `--import-realm` option.
-
-The import includes the required clients, roles, scopes, and test users. Test user passwords are provided through environment variables.
-
-Keycloak imports the realm only if it does not already exist in its database. Changes to the JSON file are therefore not automatically applied to an existing realm.
-
-### Docker Volumes
-
-The Docker Compose configuration uses an external PostgreSQL volume named `car-rest-postgres-data`.
-
-For a fresh installation, create it before starting the containers:
+Create the external volumes once:
 
 ```powershell
 docker volume create car-rest-postgres-data
+docker volume create car-rest-keycloak-data
 ```
+
+### Local Development
+
+Run `CarRestServiceApplication` from Eclipse or use:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+Spring Boot automatically starts PostgreSQL and Keycloak using `compose.local.yaml`.
+
+Alternatively, start the infrastructure manually:
+
+```powershell
+docker compose -f compose.local.yaml up -d
+```
+
+Spring Boot runs on the host and connects to PostgreSQL at `localhost:5433` and Keycloak at `localhost:8180`.
+
+### Full Docker Deployment
+
+Stop the local configuration, if running, and stop the Spring Boot process in the IDE.
+
+Start the complete stack:
+
+```powershell
+docker compose up -d --build
+```
+
+To stop the stack:
+
+```powershell
+docker compose down
+```
+
+When switching configurations, stop the currently running Compose stack first. External volumes preserve PostgreSQL and Keycloak data.
+
+### Service Addresses
+
+| Service | Host Address |
+|---|---|
+| REST API | `http://localhost:8080` |
+| Keycloak | `http://localhost:8180` |
+| PostgreSQL (local mode only) | `localhost:5433` |
+
+In full Docker mode, Spring Boot connects to PostgreSQL at `postgres:5432` and retrieves Keycloak signing keys through `keycloak:8080`.
+
+PostgreSQL is not exposed to the host in full Docker mode.
+
+### Docker Configuration
+
+The Dockerfile uses a multi-stage build with JDK 21, Maven dependency caching, and a JRE 21 runtime image. The application runs as a non-root user.
+
+The full Compose configuration includes:
+
+| Service | Memory Limit |
+|---|---|
+| Spring Boot | 1 GiB |
+| PostgreSQL | 512 MiB |
+| Keycloak | 2 GiB |
+
+Spring Boot uses `-XX:MaxRAMPercentage=50.0`. CPU limits are not configured.
+
+Application logs are written to stdout/stderr and managed by Docker with log rotation.
 
 ## API Security
 
-The application uses Keycloak as an OAuth2 authorization server and Spring Security as an OAuth2 resource server.
+The application uses Keycloak for OAuth2 authorization and Spring Security for JWT validation.
 
-API access is controlled through OAuth2 scopes rather than application-specific roles.
+- GET endpoints are publicly accessible.
+- Car write operations require `cars:write`.
+- Manufacturer, model, and category write operations require `catalog:write`.
+- Missing authentication returns `401`; insufficient permissions return `403`.
 
-- GET requests are publicly accessible without authentication.
-- POST, PUT, PATCH, and DELETE requests require a valid JWT access token.
-- Car write operations require the `cars:write` scope.
-- Manufacturer, car model, and category write operations require the `catalog:write` scope.
+Authorization is based on scopes rather than Keycloak-specific roles.
 
-The API validates incoming JWT access tokens and checks the required scopes before allowing protected operations.
+### Keycloak Configuration
 
-Authorization rules are centralized in Spring Security configuration instead of being distributed across individual controllers.
+The realm configuration is stored at:
 
-### Test Users
+`docker/keycloak/import/car-service-realm.json`
 
-The imported Keycloak realm provides three test users:
+Both Compose configurations import the `car-service` realm on first initialization. Existing realms are preserved and are not overwritten automatically.
 
-| Username | Realm Roles | Granted Scopes |
-|---|---|---|
-| `car-editor` | `CAR_EDITOR` | `cars:write` |
-| `catalog-editor` | `CATALOG_EDITOR` | `catalog:write` |
-| `car-tester` | `CAR_EDITOR`, `CATALOG_EDITOR` | `cars:write`, `catalog:write` |
+The imported realm provides these test users:
 
-Keycloak manages the mapping between realm roles and OAuth2 scopes. The application does not depend on Keycloak role names.
+| User | Granted Scopes |
+|---|---|
+| `car-editor` | `cars:write` |
+| `catalog-editor` | `catalog:write` |
+| `car-tester` | `cars:write`, `catalog:write` |
+
+Test user passwords are configured through environment variables.
 
 ## API Documentation
 
-OpenAPI 3 documentation is generated using Springdoc OpenAPI.
+OpenAPI documentation is generated with Springdoc:
 
-After starting the application, the documentation is available at:
+- **Swagger UI:** `http://localhost:8080/swagger-ui/index.html`
+- **OpenAPI JSON:** `http://localhost:8080/v3/api-docs`
 
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
-
-The OpenAPI specification documents the available endpoints, request and response schemas, HTTP status codes, and OAuth2 security requirements.
-
-Public GET operations do not require authentication. Protected operations require the corresponding OAuth2 scopes.
-
-Swagger UI supports OAuth2 authorization and JWT Bearer authentication for testing protected endpoints.
+Swagger UI supports OAuth2 Authorization Code with PKCE and JWT Bearer authentication.
 
 ## Postman Integration Tests
 
-The Postman collection is located at:
+Collection:
 
 `docs/car-rest-service.integration-tests.postman_collection.json`
 
-The collection contains integration tests for public API access, car operations, and catalog management.
+The collection covers public endpoints, CRUD operations, validation, and authorization.
 
-Tests are organized into the following groups:
+Configure a Postman environment named `Car REST - Local`:
 
-- **Public Access** — verifies public GET endpoints, request validation, and rejection of unauthenticated write operations.
-- **Cars** — tests car creation, retrieval, updates, deletion, and business validation rules.
-- **Catalog** — tests category, manufacturer, and car model management.
-
-Postman scripts use collection variables to share data between requests, including generated IDs and other values required by subsequent operations.
-
-### Postman Environment
-
-The collection uses environment variables to separate configuration from individual requests.
-
-The local environment is named `Car REST - Local` and contains:
-
-| Variable | Example |
+| Variable | Value |
 |---|---|
 | `baseUrl` | `http://localhost:8080` |
 | `keycloakUrl` | `http://localhost:8180` |
@@ -172,79 +182,33 @@ The local environment is named `Car REST - Local` and contains:
 | `clientId` | `car-rest-postman` |
 | `callbackUrl` | `https://oauth.pstmn.io/v1/callback` |
 
-Create or import an environment containing these variables and select it before running the collection.
+The collection uses **OAuth2 Authorization Code with PKCE** and the public `car-rest-postman` client.
 
-Using environment variables allows the same collection to be reused with different API and Keycloak instances without modifying individual requests.
+To run the tests:
 
-### Authentication
+1. Import the collection and select the environment.
+2. In the collection's Authorization tab, obtain a token using **Get New Access Token**.
+3. Authenticate as `car-tester` and select **Use Token**.
+4. Run the collection using Postman Collection Runner.
 
-Authentication is managed through Postman's built-in OAuth2 authorization mechanism using Keycloak.
+Protected requests inherit OAuth2 authentication from the collection. The Public Access folder uses No Auth.
 
-The collection uses **Authorization Code with PKCE** and the `car-rest-postman` public client.
+Collection variables manage dependent requests and generated entity IDs. No passwords or JWT tokens are hardcoded in the collection.
 
-The OAuth2 configuration is defined at the collection level. Protected requests use **Inherit auth from parent**, allowing a single access token to be reused across requests until it expires.
+## Automated Tests
 
-The **Public Access** folder explicitly uses **No Auth** to test unauthenticated access.
+The project includes unit, integration, persistence, and security tests using JUnit 5, Spring Boot Test, and Testcontainers (PostgreSQL and Keycloak).
 
-This approach keeps authentication centralized and avoids additional JavaScript scripts or collection variables for managing JWT tokens.
+Run the tests with Docker Desktop available:
 
-### Obtaining an Access Token
-
-1. Import the collection into Postman.
-2. Select the `Car REST - Local` environment.
-3. Open the collection's **Authorization** tab.
-4. Verify the following OAuth2 settings:
-
-   | Setting | Value |
-   |---|---|
-   | Type | OAuth 2.0 |
-   | Grant Type | Authorization Code (with PKCE) |
-   | Auth URL | `{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/auth` |
-   | Access Token URL | `{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token` |
-   | Client ID | `{{clientId}}` |
-   | Client Secret | Not required (public client) |
-   | Callback URL | `{{callbackUrl}}` |
-   | Scope | `cars:write catalog:write` |
-   | Add authorization data to | Request Headers |
-
-5. Click **Get New Access Token**.
-6. Authenticate using one of the imported Keycloak test users.
-7. Click **Use Token** to apply the obtained token to the collection.
-
-Postman attaches the access token to requests that inherit authorization from the collection:
-
-```http
-Authorization: Bearer <access_token>
+```powershell
+.\mvnw.cmd test
 ```
 
-The token is managed by Postman's OAuth2 authorization mechanism and does not need to be manually inserted into request headers or JavaScript scripts.
+Docker image builds skip test execution; tests are run separately.
 
-A new token must be obtained or the existing token refreshed when it expires.
+## Notes
 
-### Running Integration Tests
-
-Before running the collection:
-
-1. Ensure PostgreSQL, Keycloak, and the Spring Boot application are running.
-2. Select the correct Postman environment.
-3. Obtain an OAuth2 access token using a test user with the required scopes.
-4. Open the collection in Postman and select **Run**.
-5. Execute the requests in their defined order.
-
-For a complete run of the protected operations, the `car-tester` user can be used because it has both `cars:write` and `catalog:write` scopes.
-
-The tests use Postman collection variables to pass data between dependent requests.
-
-Some tests create temporary entities and subsequently update or delete them to verify API behavior.
-
-The **Public Access** folder does not inherit OAuth2 authorization, ensuring that its unauthenticated access tests remain valid.
-
-### Token and Credential Handling
-
-The collection does not contain hardcoded JWT access tokens, refresh tokens, or user passwords.
-
-OAuth2 authentication is handled by Postman, while JavaScript scripts are used only for integration test logic and request chaining.
-
-Sensitive credentials and runtime tokens must not be committed to the repository.
-
-This approach keeps the test collection reusable while maintaining a clear separation between authentication configuration and API test logic.
+- Flyway manages the database schema; Hibernate uses `ddl-auto=validate`.
+- PostgreSQL and Keycloak data are stored in external Docker volumes.
+- The Docker configurations use HTTP and Keycloak development mode and are intended for local development and integration testing.

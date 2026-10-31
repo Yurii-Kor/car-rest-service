@@ -11,6 +11,7 @@ logging:
   level:
     root: WARN
     ua.foxminded.carrestservice: INFO
+    org.hibernate.SQL: DEBUG
 
   file:
     name: target/logs/car-rest-service-tests.log
