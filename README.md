@@ -23,7 +23,7 @@ A RESTful API for managing a car catalog, built with Java 21 and Spring Boot 4.
 
 ## Environment Configuration
 
-Create a `.env` file in the project root with the following variables:
+Create a `.env` file in the project root:
 
 | Variable | Example / Description |
 |---|---|
@@ -38,22 +38,24 @@ Create a `.env` file in the project root with the following variables:
 | `CATALOG_EDITOR_PASSWORD` | Catalog editor test user password |
 | `CAR_TESTER_PASSWORD` | Combined-permissions test user password |
 
-All ten variables are required for the Docker Compose setup.
+All ten variables are required for Docker Compose.
 
 The `.env` file is excluded from Git and must not be committed.
 
 ## Running the Application
 
-The project provides two Docker Compose configurations:
+The project supports two Docker Compose configurations:
 
+- `compose.yaml` — complete stack with Spring Boot, PostgreSQL, and Keycloak.
 - `compose.local.yaml` — PostgreSQL and Keycloak in Docker, Spring Boot running locally.
-- `compose.yaml` — the complete application stack running in Docker.
 
-Both configurations reuse the same persistent volumes.
+The local configuration uses Docker Compose `extends` to inherit PostgreSQL and Keycloak settings from `compose.yaml`, avoiding configuration duplication.
+
+Both modes share the same external Docker volumes.
 
 ### Initial Setup
 
-Docker Desktop and Docker Compose are required. Java 21 is additionally required for running Spring Boot outside Docker.
+Docker Desktop and Docker Compose are required. Java 21 is additionally required for local development.
 
 Create the external volumes once:
 
@@ -82,7 +84,7 @@ Spring Boot runs on the host and connects to PostgreSQL at `localhost:5433` and 
 
 ### Full Docker Deployment
 
-Stop the local configuration, if running, and stop the Spring Boot process in the IDE.
+Stop the local application and Compose stack before switching modes.
 
 Start the complete stack:
 
@@ -90,13 +92,13 @@ Start the complete stack:
 docker compose up -d --build
 ```
 
-To stop the stack:
+Stop the stack:
 
 ```powershell
 docker compose down
 ```
 
-When switching configurations, stop the currently running Compose stack first. External volumes preserve PostgreSQL and Keycloak data.
+External volumes preserve PostgreSQL and Keycloak data.
 
 ### Service Addresses
 
@@ -112,17 +114,21 @@ PostgreSQL is not exposed to the host in full Docker mode.
 
 ### Docker Configuration
 
-The Dockerfile uses a multi-stage build with JDK 21, Maven dependency caching, and a JRE 21 runtime image. The application runs as a non-root user.
+The Dockerfile uses a multi-stage build with JDK 21, Maven BuildKit caching, and a JRE 21 runtime.
 
-The full Compose configuration includes:
+Spring Boot's layered JAR is extracted into separate Docker layers for dependencies, the Boot loader, and application code. The JAR filename includes the Maven project version, while Dockerfile wildcard matching supports version changes without hardcoded paths.
+
+The application runs as a non-root user.
+
+Docker Compose memory limits:
 
 | Service | Memory Limit |
 |---|---|
-| Spring Boot | 1 GiB |
-| PostgreSQL | 512 MiB |
-| Keycloak | 2 GiB |
+| Spring Boot (full mode) | 1 GiB |
+| PostgreSQL (both modes) | 512 MiB |
+| Keycloak (both modes) | 2 GiB |
 
-Spring Boot uses `-XX:MaxRAMPercentage=50.0`. CPU limits are not configured.
+Spring Boot uses `-XX:MaxRAMPercentage=50.0` in full Docker mode. CPU limits are not configured.
 
 Application logs are written to stdout/stderr and managed by Docker with log rotation.
 
@@ -139,13 +145,11 @@ Authorization is based on scopes rather than Keycloak-specific roles.
 
 ### Keycloak Configuration
 
-The realm configuration is stored at:
+Realm configuration:
 
 `docker/keycloak/import/car-service-realm.json`
 
-Both Compose configurations import the `car-service` realm on first initialization. Existing realms are preserved and are not overwritten automatically.
-
-The imported realm provides these test users:
+Both Compose modes import the `car-service` realm on first initialization. Existing realms are preserved.
 
 | User | Granted Scopes |
 |---|---|
@@ -156,8 +160,6 @@ The imported realm provides these test users:
 Test user passwords are configured through environment variables.
 
 ## API Documentation
-
-OpenAPI documentation is generated with Springdoc:
 
 - **Swagger UI:** `http://localhost:8080/swagger-ui/index.html`
 - **OpenAPI JSON:** `http://localhost:8080/v3/api-docs`
@@ -193,13 +195,13 @@ To run the tests:
 
 Protected requests inherit OAuth2 authentication from the collection. The Public Access folder uses No Auth.
 
-Collection variables manage dependent requests and generated entity IDs. No passwords or JWT tokens are hardcoded in the collection.
+Collection variables manage dependent requests and generated entity IDs. No passwords or JWT tokens are hardcoded.
 
 ## Automated Tests
 
 The project includes unit, integration, persistence, and security tests using JUnit 5, Spring Boot Test, and Testcontainers (PostgreSQL and Keycloak).
 
-Run the tests with Docker Desktop available:
+Run tests with Docker Desktop available:
 
 ```powershell
 .\mvnw.cmd test
@@ -211,4 +213,4 @@ Docker image builds skip test execution; tests are run separately.
 
 - Flyway manages the database schema; Hibernate uses `ddl-auto=validate`.
 - PostgreSQL and Keycloak data are stored in external Docker volumes.
-- The Docker configurations use HTTP and Keycloak development mode and are intended for local development and integration testing.
+- Docker Compose configurations use HTTP and Keycloak development mode and are intended for local development and integration testing.
