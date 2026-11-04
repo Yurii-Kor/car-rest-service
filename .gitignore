@@ -1,0 +1,47 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Java
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+# Eclipse
+.classpath
+.project
+.settings/
+.factorypath
+.metadata/
+.springBeans
+.sts4-cache/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Local Docker overrides
+docker-compose.override.yml
+compose.override.yaml

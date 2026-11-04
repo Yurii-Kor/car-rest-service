@@ -1,0 +1,24 @@
+name: car-rest-service
+
+services:
+  postgres:
+    extends:
+      file: compose.yaml
+      service: postgres
+
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  keycloak:
+    extends:
+      file: compose.yaml
+      service: keycloak
+
+volumes:
+  postgres-data:
+    external: true
+    name: car-rest-postgres-data
+
+  keycloak-data:
+    external: true
+    name: car-rest-keycloak-data

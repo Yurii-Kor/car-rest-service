@@ -1,0 +1,13 @@
+# Exclude everything by default
+*
+
+# Maven configuration and wrapper
+!pom.xml
+!mvnw
+!.mvn/
+!.mvn/**
+
+# Application source code and resources
+!src/
+!src/main/
+!src/main/**
